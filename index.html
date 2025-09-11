@@ -753,6 +753,8 @@
             
             // Handle game end with payouts
             socket.on('game_ended', function(results) {
+                console.log('Game ended with results:', results);
+                
                 // Update balance if user won
                 if (results.payoutResults && results.payoutResults.payouts) {
                     const userPayout = results.payoutResults.payouts.find(p => p.userId === currentUser.uid);
@@ -766,6 +768,8 @@
                         // User didn't win
                         showMessage(`Better luck next time! The winner was ${results.winner}`, 'info');
                     }
+                } else {
+                    console.log('No payout results found');
                 }
                 
                 // Show game results
@@ -1440,6 +1444,15 @@
             gameState.gamePhase = 'waiting';
         }
         
+        function showGameRoom(room) {
+            hideAllScreens();
+            document.getElementById('gameRoom').classList.remove('hidden');
+            document.getElementById('currentRoomName').textContent = room.name;
+            gameState.gamePhase = 'waiting';
+            gameState.currentRoom = room.id;
+            updateGameStatus(room);
+        }
+        
         function updateGameStatus(room) {
             var statusDiv = document.getElementById('gameStatus');
             var startButton = document.getElementById('startGameButton');
@@ -1447,14 +1460,13 @@
             
             // Update room info
             document.getElementById('roomEntryFee').textContent = room.entryFee || 10;
-            document.getElementById('roomPlayerCount').textContent = room.players.length || 1;
-            var totalPot = (room.entryFee || 10) * (room.players.length || 1);
-            var prizePool = totalPot * 0.94; // 94% to players
-            document.getElementById('roomPrizePool').textContent = prizePool.toFixed(2);
+            document.getElementById('roomPlayerCount').textContent = room.players ? room.players.length : 1;
+            document.getElementById('roomPrizePool').textContent = (room.prizePool || 0).toFixed(2);
             
             if (room.status === 'waiting') {
-                statusText = 'Waiting for players... (' + room.players.length + '/' + room.maxPlayers + ')';
-                if (room.players.length >= 2) {
+                var playerCount = room.players ? room.players.length : 1;
+                statusText = 'Waiting for players... (' + playerCount + '/' + room.maxPlayers + ')';
+                if (playerCount >= 2) {
                     statusText += ' - Ready to start!';
                     // Show start button only for host
                     console.log('Debug - Host ID:', room.hostId, 'Socket ID:', socket.id, 'Is Host:', room.hostId === socket.id);
