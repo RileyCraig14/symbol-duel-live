@@ -346,9 +346,14 @@ io.on('connection', (socket) => {
     // Set user ID for authenticated users
     socket.on('set_user_id', (data) => {
         if (data.userId) {
-            players.get(socket.id).userId = data.userId;
-            console.log('User ID set for player:', players.get(socket.id).name, 'ID:', data.userId);
-            console.log('Current balance for user:', userBalances.get(data.userId) || 0);
+            const player = players.get(socket.id);
+            if (player) {
+                player.userId = data.userId;
+                console.log('User ID set for player:', player.name, 'ID:', data.userId);
+                console.log('Current balance for user:', userBalances.get(data.userId) || 0);
+            } else {
+                console.log('ERROR: Player not found for socket:', socket.id);
+            }
         }
     });
     
@@ -369,10 +374,22 @@ io.on('connection', (socket) => {
     socket.on('create_room', (data) => {
         const roomId = 'room_' + Date.now();
         const player = players.get(socket.id);
+        
+        console.log('Create room request - Socket ID:', socket.id, 'Player:', player);
+        
+        if (!player) {
+            socket.emit('error', { message: 'Player not found. Please refresh and try again.' });
+            return;
+        }
+        
         const entryFeeCents = (data.entryFee || 10) * 100; // Convert to cents
+        
+        console.log('Player user ID:', player.userId, 'Entry fee cents:', entryFeeCents);
         
         // Check if player has enough balance
         const currentBalance = userBalances.get(player.userId) || 0;
+        console.log('Current balance for user:', currentBalance);
+        
         if (currentBalance < entryFeeCents) {
             socket.emit('error', { 
                 message: `Insufficient balance. Need $${(data.entryFee || 10).toFixed(2)} to create room. Current balance: $${(currentBalance/100).toFixed(2)}` 
