@@ -557,6 +557,15 @@
                 if (currentUser && currentUser.uid) {
                     socket.emit('set_user_id', { userId: currentUser.uid });
                     console.log('Sent user ID to server:', currentUser.uid);
+                    
+                    // Also send a test balance check
+                    setTimeout(() => {
+                        fetch(`/api/user-balance/${currentUser.uid}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log('Balance check after user ID set:', data);
+                            });
+                    }, 1000);
                 }
                 
                 // Send heartbeat every 30 seconds to keep connection alive
@@ -1103,6 +1112,13 @@
                     const data = await response.json();
                     document.getElementById('balance').textContent = data.balance.toFixed(2);
                     gameState.balance = data.balance; // Update game state
+                    console.log('Loaded balance from server:', data.balance);
+                    
+                    // If balance is 0 but we expect it to be higher, try to set user ID again
+                    if (data.balance === 0 && socket && isConnected) {
+                        console.log('Balance is 0, sending user ID again...');
+                        socket.emit('set_user_id', { userId: currentUser.uid });
+                    }
                 } catch (error) {
                     console.error('Error loading balance:', error);
                     document.getElementById('balance').textContent = '0.00';
