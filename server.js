@@ -37,7 +37,7 @@ app.use(helmet({
             fontSrc: ["'self'"],
             objectSrc: ["'none'"],
             mediaSrc: ["'self'"],
-            frameSrc: ["'self'", "https://js.stripe.com"]
+            frameSrc: ["'self'", "https://js.stripe.com", "https://symbol-duel.firebaseapp.com"],
         }
     }
 }));
@@ -408,12 +408,35 @@ io.on('connection', (socket) => {
             return;
         }
         
+        // Check and deduct entry fee from player balance
+        const player = players.get(socket.id);
+        const entryFeeCents = room.entryFee * 100; // Convert to cents
+        const currentBalance = userBalances.get(player.userId) || 0;
+        
+        if (currentBalance < entryFeeCents) {
+            socket.emit('error', { 
+                message: `Insufficient balance. Need $${room.entryFee.toFixed(2)} to join. Current balance: $${(currentBalance/100).toFixed(2)}` 
+            });
+            return;
+        }
+        
+        // Deduct entry fee
+        const newBalance = currentBalance - entryFeeCents;
+        userBalances.set(player.userId, newBalance);
+        
         room.players.push(socket.id);
-        room.playerNames.push(players.get(socket.id).name);
+        room.playerNames.push(player.name);
         room.scores[socket.id] = 0;
         
         socket.join(data.roomId);
-        players.get(socket.id).roomId = data.roomId;
+        player.roomId = data.roomId;
+        
+        // Notify player of balance update
+        socket.emit('balance_updated', { 
+            newBalance: newBalance / 100,
+            deducted: room.entryFee,
+            message: `Entry fee of $${room.entryFee.toFixed(2)} deducted from your balance`
+        });
         
         // Broadcast to all players in room
         io.to(data.roomId).emit('room_updated', room);
@@ -688,21 +711,42 @@ function endGame(room) {
     };
     
     // Process each player payout
-    playerRankings.forEach((player, index) => {
+    playerRankings.forEach(async (player, index) => {
         const position = player.position;
         const payoutAmount = payoutStructure.payouts[position];
         
         if (payoutAmount && payoutAmount >= PAYOUT_CONFIG.MINIMUM_PAYOUT) {
-            payoutResults.payouts.push({
-                playerId: player.playerId,
-                playerName: player.playerName,
-                position: position,
-                amount: payoutAmount,
-                payoutId: 'po_' + Date.now() + '_' + index,
-                status: 'success'
-            });
-            
-            payoutResults.totalPaid += payoutAmount;
+            // Add real money to player's balance
+            try {
+                const currentBalance = userBalances.get(player.playerId) || 0;
+                const newBalance = currentBalance + (payoutAmount * 100); // Convert to cents
+                userBalances.set(player.playerId, newBalance);
+                
+                payoutResults.payouts.push({
+                    playerId: player.playerId,
+                    playerName: player.playerName,
+                    position: position,
+                    amount: payoutAmount,
+                    payoutId: 'po_' + Date.now() + '_' + index,
+                    status: 'success',
+                    newBalance: newBalance / 100 // Return balance in dollars
+                });
+                
+                payoutResults.totalPaid += payoutAmount;
+                
+                console.log(`Payout: ${player.playerName} won $${payoutAmount.toFixed(2)} (Position ${position})`);
+            } catch (error) {
+                console.error(`Error processing payout for ${player.playerName}:`, error);
+                payoutResults.payouts.push({
+                    playerId: player.playerId,
+                    playerName: player.playerName,
+                    position: position,
+                    amount: payoutAmount,
+                    payoutId: 'po_' + Date.now() + '_' + index,
+                    status: 'error',
+                    error: error.message
+                });
+            }
         }
     });
     

@@ -158,6 +158,60 @@
             transform: translateY(-2px);
         }
         
+        .game-results {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .winner {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 2px solid #ffd700;
+        }
+        
+        .payouts {
+            margin: 20px 0;
+        }
+        
+        .payout-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .payout-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .payout-item.success {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+        }
+        
+        .payout-item.error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+        }
+        
+        .game-summary {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .game-summary p {
+            margin: 5px 0;
+        }
+        
         .game-btn.primary {
             background: linear-gradient(45deg, #4ade80, #22c55e);
         }
@@ -674,6 +728,27 @@
             socket.on('rooms_list', function(rooms) {
                 displayRoomsList(rooms);
             });
+            
+            // Handle balance updates
+            socket.on('balance_updated', function(data) {
+                document.getElementById('balance').textContent = data.newBalance.toFixed(2);
+                showMessage(data.message, 'info');
+            });
+            
+            // Handle game end with payouts
+            socket.on('game_ended', function(results) {
+                // Update balance if user won
+                if (results.payoutResults && results.payoutResults.payouts) {
+                    const userPayout = results.payoutResults.payouts.find(p => p.playerId === currentUser.uid);
+                    if (userPayout && userPayout.status === 'success') {
+                        document.getElementById('balance').textContent = userPayout.newBalance.toFixed(2);
+                        showMessage(`🎉 You won $${userPayout.amount.toFixed(2)}! New balance: $${userPayout.newBalance.toFixed(2)}`, 'success');
+                    }
+                }
+                
+                // Show game results
+                showGameResults(results);
+            });
         }
         
         // Firebase Authentication
@@ -1122,6 +1197,50 @@
             screens.forEach(function(screen) {
                 document.getElementById(screen).classList.add('hidden');
             });
+        }
+        
+        function showGameResults(results) {
+            // Create results display
+            let resultsHtml = `
+                <div class="game-results">
+                    <h2>🎉 Game Results</h2>
+                    <div class="winner">
+                        <h3>Winner: ${results.winner}</h3>
+                        <p>Final Score: ${results.finalScores[Object.keys(results.finalScores)[0]]}</p>
+                    </div>
+                    <div class="payouts">
+                        <h4>💰 Payouts</h4>
+                        <div class="payout-list">
+            `;
+            
+            if (results.payoutResults && results.payoutResults.payouts) {
+                results.payoutResults.payouts.forEach(payout => {
+                    resultsHtml += `
+                        <div class="payout-item ${payout.status === 'success' ? 'success' : 'error'}">
+                            <span class="position">#${payout.position + 1}</span>
+                            <span class="player">${payout.playerName}</span>
+                            <span class="amount">$${payout.amount.toFixed(2)}</span>
+                            ${payout.status === 'success' ? '✅' : '❌'}
+                        </div>
+                    `;
+                });
+            }
+            
+            resultsHtml += `
+                        </div>
+                    </div>
+                    <div class="game-summary">
+                        <p><strong>Total Pot:</strong> $${results.totalPot.toFixed(2)}</p>
+                        <p><strong>House Take:</strong> $${results.houseTake.toFixed(2)}</p>
+                        <p><strong>Player Pot:</strong> $${results.playerPot.toFixed(2)}</p>
+                    </div>
+                    <button class="game-btn primary" onclick="showGameMenu()">Back to Menu</button>
+                </div>
+            `;
+            
+            // Show results in a modal or replace game room content
+            document.getElementById('gameRoom').innerHTML = resultsHtml;
+            document.getElementById('gameRoom').classList.remove('hidden');
         }
         
         function loadStats() {
