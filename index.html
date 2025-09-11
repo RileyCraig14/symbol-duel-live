@@ -791,6 +791,7 @@
 
             try {
                 showMessage('Processing payment...', 'info');
+                console.log('Starting payment process for amount:', amount, 'gameId:', gameId);
                 
                 // Create payment intent
                 const response = await fetch('/api/create-payment-intent', {
@@ -806,6 +807,7 @@
                 });
 
                 const { clientSecret, paymentIntentId } = await response.json();
+                console.log('Payment intent created, clientSecret:', clientSecret, 'paymentIntentId:', paymentIntentId);
 
                 if (!clientSecret) {
                     throw new Error('Failed to create payment intent');
@@ -825,9 +827,12 @@
                     return false;
                 }
 
+                console.log('Payment result:', paymentIntent);
+
                 if (paymentIntent.status === 'succeeded') {
                     // Add balance to user account
                     try {
+                        console.log('Adding balance to user account:', currentUser.uid, 'amount:', amount * 100);
                         const addBalanceResponse = await fetch('/api/add-balance', {
                             method: 'POST',
                             headers: {
@@ -840,10 +845,12 @@
                         });
                         
                         const balanceData = await addBalanceResponse.json();
+                        console.log('Add balance response:', balanceData);
                         if (balanceData.success) {
                             showMessage('Payment successful! Balance added to your account!', 'success');
                             return true;
                         } else {
+                            console.error('Failed to add balance:', balanceData);
                             showMessage('Payment succeeded but failed to add balance', 'error');
                             return false;
                         }
