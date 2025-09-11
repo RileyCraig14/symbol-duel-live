@@ -191,11 +191,61 @@ app.post('/api/confirm-payment', async (req, res) => {
     }
 });
 
+// User Balance Management Endpoints
+app.get('/api/user-balance/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const balance = userBalances.get(userId) || 0;
+    res.json({ balance: balance / 100 }); // Return in dollars
+});
+
+app.post('/api/add-balance', async (req, res) => {
+    try {
+        const { userId, amount } = req.body;
+        const currentBalance = userBalances.get(userId) || 0;
+        const newBalance = currentBalance + amount;
+        userBalances.set(userId, newBalance);
+        
+        res.json({ 
+            success: true, 
+            newBalance: newBalance / 100,
+            message: `Added $${amount/100} to your account`
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/deduct-balance', async (req, res) => {
+    try {
+        const { userId, amount } = req.body;
+        const currentBalance = userBalances.get(userId) || 0;
+        
+        if (currentBalance < amount) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Insufficient balance' 
+            });
+        }
+        
+        const newBalance = currentBalance - amount;
+        userBalances.set(userId, newBalance);
+        
+        res.json({ 
+            success: true, 
+            newBalance: newBalance / 100,
+            message: `Deducted $${amount/100} from your account`
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // Game state management (proven pattern from successful gambling platforms)
 const rooms = new Map();
 const players = new Map();
 const leaderboard = new Map(); // Track player statistics
 const gameHistory = []; // Track game history for analytics
+const userBalances = new Map(); // Track user balances
 
 // Proven payout configuration (based on FanDuel/DraftKings models)
 const PAYOUT_CONFIG = {

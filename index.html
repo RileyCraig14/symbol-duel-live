@@ -332,7 +332,7 @@
             <div class="user-info">
                 <h2>Welcome to Symbol Duel!</h2>
                 <p>You are logged in successfully.</p>
-                <div class="balance">💰 Balance: $<span id="balance">1000</span></div>
+                <div class="balance">💰 Balance: $<span id="balance">0.00</span></div>
                 <div class="game-buttons" style="margin-top: 15px;">
                     <button class="game-btn primary" onclick="showGameMenu()" style="width: auto; padding: 10px 20px;">🎮 Go to Game</button>
                     <button class="btn" onclick="logout()" style="width: auto; padding: 10px 20px;">Logout</button>
@@ -734,8 +734,32 @@
                 }
 
                 if (paymentIntent.status === 'succeeded') {
-                    showMessage('Payment successful! Welcome to the game!', 'success');
-                    return true;
+                    // Add balance to user account
+                    try {
+                        const addBalanceResponse = await fetch('/api/add-balance', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                userId: currentUser.uid,
+                                amount: amount * 100 // Convert to cents
+                            })
+                        });
+                        
+                        const balanceData = await addBalanceResponse.json();
+                        if (balanceData.success) {
+                            showMessage('Payment successful! Balance added to your account!', 'success');
+                            return true;
+                        } else {
+                            showMessage('Payment succeeded but failed to add balance', 'error');
+                            return false;
+                        }
+                    } catch (error) {
+                        console.error('Error adding balance:', error);
+                        showMessage('Payment succeeded but failed to add balance', 'error');
+                        return false;
+                    }
                 } else {
                     showMessage('Payment not completed', 'error');
                     return false;
@@ -980,6 +1004,20 @@
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('gameArea').classList.remove('hidden');
             initializeSocket();
+            loadUserBalance();
+        }
+        
+        async function loadUserBalance() {
+            if (currentUser) {
+                try {
+                    const response = await fetch(`/api/user-balance/${currentUser.uid}`);
+                    const data = await response.json();
+                    document.getElementById('balance').textContent = data.balance.toFixed(2);
+                } catch (error) {
+                    console.error('Error loading balance:', error);
+                    document.getElementById('balance').textContent = '0.00';
+                }
+            }
         }
         
         function showLoginForm() {
@@ -1074,6 +1112,7 @@
             const success = await processPayment(amount, 'add-funds');
             if (success) {
                 showMessage(`Successfully added $${amount} to your account!`, 'success');
+                loadUserBalance(); // Refresh balance display
                 showGameMenu();
             }
         }

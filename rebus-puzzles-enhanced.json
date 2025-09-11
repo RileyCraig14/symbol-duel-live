@@ -1,0 +1,464 @@
+[
+  {
+    "symbols": "🐝🍂",
+    "answer": "believe",
+    "difficulty": "easy",
+    "category": "wordplay"
+  },
+  {
+    "symbols": "🌞🌻",
+    "answer": "sunflower",
+    "difficulty": "easy",
+    "category": "nature"
+  },
+  {
+    "symbols": "🎂🎉",
+    "answer": "birthday",
+    "difficulty": "easy",
+    "category": "celebration"
+  },
+  {
+    "symbols": "🍋🥤",
+    "answer": "lemonade",
+    "difficulty": "easy",
+    "category": "food"
+  },
+  {
+    "symbols": "🚗🛣️",
+    "answer": "road trip",
+    "difficulty": "easy",
+    "category": "travel"
+  },
+  {
+    "symbols": "🛏️💤",
+    "answer": "bedtime",
+    "difficulty": "easy",
+    "category": "daily life"
+  },
+  {
+    "symbols": "🍕📦",
+    "answer": "pizza box",
+    "difficulty": "easy",
+    "category": "food"
+  },
+  {
+    "symbols": "🐶🐾",
+    "answer": "dog walk",
+    "difficulty": "easy",
+    "category": "pets"
+  },
+  {
+    "symbols": "📚🏫",
+    "answer": "school books",
+    "difficulty": "easy",
+    "category": "education"
+  },
+  {
+    "symbols": "🌧️☔",
+    "answer": "rainy day",
+    "difficulty": "easy",
+    "category": "weather"
+  },
+  {
+    "symbols": "🎵🎧",
+    "answer": "music",
+    "difficulty": "easy",
+    "category": "entertainment"
+  },
+  {
+    "symbols": "🏠🔑",
+    "answer": "house key",
+    "difficulty": "easy",
+    "category": "daily life"
+  },
+  {
+    "symbols": "☕📰",
+    "answer": "coffee break",
+    "difficulty": "easy",
+    "category": "daily life"
+  },
+  {
+    "symbols": "🎮🎯",
+    "answer": "video game",
+    "difficulty": "easy",
+    "category": "entertainment"
+  },
+  {
+    "symbols": "🏖️🏄",
+    "answer": "beach day",
+    "difficulty": "easy",
+    "category": "recreation"
+  },
+  {
+    "symbols": "🎨🖌️",
+    "answer": "art class",
+    "difficulty": "easy",
+    "category": "education"
+  },
+  {
+    "symbols": "🍔🍟",
+    "answer": "fast food",
+    "difficulty": "easy",
+    "category": "food"
+  },
+  {
+    "symbols": "📱💬",
+    "answer": "text message",
+    "difficulty": "easy",
+    "category": "technology"
+  },
+  {
+    "symbols": "🚲🌳",
+    "answer": "bike ride",
+    "difficulty": "easy",
+    "category": "exercise"
+  },
+  {
+    "symbols": "🎪🎭",
+    "answer": "circus",
+    "difficulty": "easy",
+    "category": "entertainment"
+  },
+  {
+    "symbols": "🏥⚕️",
+    "answer": "hospital",
+    "difficulty": "medium",
+    "category": "health"
+  },
+  {
+    "symbols": "💰💳",
+    "answer": "credit card",
+    "difficulty": "medium",
+    "category": "finance"
+  },
+  {
+    "symbols": "🌍✈️",
+    "answer": "world travel",
+    "difficulty": "medium",
+    "category": "travel"
+  },
+  {
+    "symbols": "🎓🎉",
+    "answer": "graduation",
+    "difficulty": "medium",
+    "category": "education"
+  },
+  {
+    "symbols": "🏆🥇",
+    "answer": "championship",
+    "difficulty": "medium",
+    "category": "sports"
+  },
+  {
+    "symbols": "🎬🎭",
+    "answer": "movie theater",
+    "difficulty": "medium",
+    "category": "entertainment"
+  },
+  {
+    "symbols": "🍽️👨‍🍳",
+    "answer": "fine dining",
+    "difficulty": "medium",
+    "category": "food"
+  },
+  {
+    "symbols": "🏠🏡",
+    "answer": "real estate",
+    "difficulty": "medium",
+    "category": "finance"
+  },
+  {
+    "symbols": "🎵🎤",
+    "answer": "karaoke",
+    "difficulty": "medium",
+    "category": "entertainment"
+  },
+  {
+    "symbols": "🏃‍♂️🏁",
+    "answer": "marathon",
+    "difficulty": "medium",
+    "category": "sports"
+  },
+  {
+    "symbols": "📚🔬",
+    "answer": "science lab",
+    "difficulty": "medium",
+    "category": "education"
+  },
+  {
+    "symbols": "🎨🖼️",
+    "answer": "art gallery",
+    "difficulty": "medium",
+    "category": "culture"
+  },
+  {
+    "symbols": "🍕🍺",
+    "answer": "pizza party",
+    "difficulty": "medium",
+    "category": "social"
+  },
+  {
+    "symbols": "🏖️🏄‍♂️",
+    "answer": "surfing",
+    "difficulty": "medium",
+    "category": "sports"
+  },
+  {
+    "symbols": "🎪🎠",
+    "answer": "amusement park",
+    "difficulty": "medium",
+    "category": "entertainment"
+  },
+  {
+    "symbols": "🏥🚑",
+    "answer": "emergency",
+    "difficulty": "medium",
+    "category": "health"
+  },
+  {
+    "symbols": "💰📈",
+    "answer": "investment",
+    "difficulty": "hard",
+    "category": "finance"
+  },
+  {
+    "symbols": "🌍🌐",
+    "answer": "global network",
+    "difficulty": "hard",
+    "category": "technology"
+  },
+  {
+    "symbols": "🎓📊",
+    "answer": "data science",
+    "difficulty": "hard",
+    "category": "technology"
+  },
+  {
+    "symbols": "🏆🎖️",
+    "answer": "achievement",
+    "difficulty": "hard",
+    "category": "success"
+  },
+  {
+    "symbols": "🎬🎞️",
+    "answer": "film production",
+    "difficulty": "hard",
+    "category": "entertainment"
+  },
+  {
+    "symbols": "🍽️🌟",
+    "answer": "michelin star",
+    "difficulty": "hard",
+    "category": "food"
+  },
+  {
+    "symbols": "🏠🏗️",
+    "answer": "construction",
+    "difficulty": "hard",
+    "category": "business"
+  },
+  {
+    "symbols": "🎵🎼",
+    "answer": "symphony",
+    "difficulty": "hard",
+    "category": "music"
+  },
+  {
+    "symbols": "🏃‍♂️🏃‍♀️",
+    "answer": "track and field",
+    "difficulty": "hard",
+    "category": "sports"
+  },
+  {
+    "symbols": "📚🔬",
+    "answer": "research",
+    "difficulty": "hard",
+    "category": "science"
+  },
+  {
+    "symbols": "🎨🎭",
+    "answer": "performance art",
+    "difficulty": "hard",
+    "category": "culture"
+  },
+  {
+    "symbols": "🍕🍕",
+    "answer": "double trouble",
+    "difficulty": "hard",
+    "category": "wordplay"
+  },
+  {
+    "symbols": "🏖️🌊",
+    "answer": "ocean waves",
+    "difficulty": "hard",
+    "category": "nature"
+  },
+  {
+    "symbols": "🎪🎪",
+    "answer": "circus maximus",
+    "difficulty": "hard",
+    "category": "entertainment"
+  },
+  {
+    "symbols": "🏥💊",
+    "answer": "pharmacy",
+    "difficulty": "hard",
+    "category": "health"
+  },
+  {
+    "symbols": "💰💎",
+    "answer": "diamond ring",
+    "difficulty": "hard",
+    "category": "luxury"
+  },
+  {
+    "symbols": "🌍🌙",
+    "answer": "space exploration",
+    "difficulty": "hard",
+    "category": "science"
+  },
+  {
+    "symbols": "🎓🎯",
+    "answer": "target audience",
+    "difficulty": "hard",
+    "category": "marketing"
+  },
+  {
+    "symbols": "🏆🏆",
+    "answer": "double victory",
+    "difficulty": "hard",
+    "category": "sports"
+  },
+  {
+    "symbols": "🎬🎬",
+    "answer": "double feature",
+    "difficulty": "hard",
+    "category": "entertainment"
+  },
+  {
+    "symbols": "🍽️🍽️",
+    "answer": "fine dining",
+    "difficulty": "hard",
+    "category": "luxury"
+  },
+  {
+    "symbols": "🏠🏠",
+    "answer": "real estate",
+    "difficulty": "hard",
+    "category": "investment"
+  },
+  {
+    "symbols": "🎵🎵",
+    "answer": "harmony",
+    "difficulty": "hard",
+    "category": "music"
+  },
+  {
+    "symbols": "🏃‍♂️🏃‍♂️",
+    "answer": "relay race",
+    "difficulty": "hard",
+    "category": "sports"
+  },
+  {
+    "symbols": "📚📚",
+    "answer": "library",
+    "difficulty": "hard",
+    "category": "education"
+  },
+  {
+    "symbols": "🎨🎨",
+    "answer": "art studio",
+    "difficulty": "hard",
+    "category": "culture"
+  },
+  {
+    "symbols": "🍕🍕🍕",
+    "answer": "triple threat",
+    "difficulty": "expert",
+    "category": "wordplay"
+  },
+  {
+    "symbols": "🏖️🏖️🏖️",
+    "answer": "tropical paradise",
+    "difficulty": "expert",
+    "category": "travel"
+  },
+  {
+    "symbols": "🎪🎪🎪",
+    "answer": "three ring circus",
+    "difficulty": "expert",
+    "category": "entertainment"
+  },
+  {
+    "symbols": "🏥🏥🏥",
+    "answer": "medical center",
+    "difficulty": "expert",
+    "category": "health"
+  },
+  {
+    "symbols": "💰💰💰",
+    "answer": "treasure trove",
+    "difficulty": "expert",
+    "category": "finance"
+  },
+  {
+    "symbols": "🌍🌍🌍",
+    "answer": "global community",
+    "difficulty": "expert",
+    "category": "world"
+  },
+  {
+    "symbols": "🎓🎓🎓",
+    "answer": "academic excellence",
+    "difficulty": "expert",
+    "category": "education"
+  },
+  {
+    "symbols": "🏆🏆🏆",
+    "answer": "triple crown",
+    "difficulty": "expert",
+    "category": "sports"
+  },
+  {
+    "symbols": "🎬🎬🎬",
+    "answer": "trilogy",
+    "difficulty": "expert",
+    "category": "entertainment"
+  },
+  {
+    "symbols": "🍽️🍽️🍽️",
+    "answer": "culinary masterpiece",
+    "difficulty": "expert",
+    "category": "food"
+  },
+  {
+    "symbols": "🏠🏠🏠",
+    "answer": "housing development",
+    "difficulty": "expert",
+    "category": "business"
+  },
+  {
+    "symbols": "🎵🎵🎵",
+    "answer": "musical trilogy",
+    "difficulty": "expert",
+    "category": "music"
+  },
+  {
+    "symbols": "🏃‍♂️🏃‍♂️🏃‍♂️",
+    "answer": "triathlon",
+    "difficulty": "expert",
+    "category": "sports"
+  },
+  {
+    "symbols": "📚📚📚",
+    "answer": "research library",
+    "difficulty": "expert",
+    "category": "education"
+  },
+  {
+    "symbols": "🎨🎨🎨",
+    "answer": "art collection",
+    "difficulty": "expert",
+    "category": "culture"
+  }
+]
