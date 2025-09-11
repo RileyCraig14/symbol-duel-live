@@ -772,12 +772,31 @@ function endGame(room) {
         if (payoutAmount && payoutAmount >= PAYOUT_CONFIG.MINIMUM_PAYOUT) {
             // Add real money to player's balance
             try {
-                const currentBalance = userBalances.get(player.playerId) || 0;
+                // Get the Firebase user ID for this player
+                const playerObj = players.get(player.playerId);
+                const userId = playerObj ? playerObj.userId : null;
+                
+                if (!userId) {
+                    console.error(`No user ID found for player ${player.playerName} (socket: ${player.playerId})`);
+                    payoutResults.payouts.push({
+                        playerId: player.playerId,
+                        playerName: player.playerName,
+                        position: position,
+                        amount: payoutAmount,
+                        payoutId: 'po_' + Date.now() + '_' + index,
+                        status: 'error',
+                        error: 'No user ID found for player'
+                    });
+                    return;
+                }
+                
+                const currentBalance = userBalances.get(userId) || 0;
                 const newBalance = currentBalance + (payoutAmount * 100); // Convert to cents
-                userBalances.set(player.playerId, newBalance);
+                userBalances.set(userId, newBalance);
                 
                 payoutResults.payouts.push({
                     playerId: player.playerId,
+                    userId: userId,
                     playerName: player.playerName,
                     position: position,
                     amount: payoutAmount,
