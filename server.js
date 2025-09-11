@@ -327,7 +327,7 @@ io.on('connection', (socket) => {
         name: playerName,
         roomId: null,
         score: 0,
-        balance: 1000
+        userId: null // Will be set when user authenticates
     });
     
     // Register player with custom name
@@ -340,6 +340,14 @@ io.on('connection', (socket) => {
             socket.emit('test_event', {
                 message: 'Connection working! Player: ' + data.name.trim()
             });
+        }
+    });
+    
+    // Set user ID for authenticated users
+    socket.on('set_user_id', (data) => {
+        if (data.userId) {
+            players.get(socket.id).userId = data.userId;
+            console.log('User ID set for player:', players.get(socket.id).name, 'ID:', data.userId);
         }
     });
     

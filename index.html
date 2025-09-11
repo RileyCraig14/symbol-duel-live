@@ -553,6 +553,11 @@
                     showMessage('Test event: ' + data.message, 'success');
                 });
                 
+                // Send user ID to server for balance tracking
+                if (currentUser && currentUser.uid) {
+                    socket.emit('set_user_id', { userId: currentUser.uid });
+                }
+                
                 // Send heartbeat every 30 seconds to keep connection alive
                 setInterval(function() {
                     if (socket && isConnected) {
