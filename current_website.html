@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Symbol Duel - Multiplayer Rebus Battles</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 400px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+        }
+        
+        .logo {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            color: #ffd700;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #ccc;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+        }
+        
+        input::placeholder {
+            color: #ccc;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .error {
+            color: #ff6b6b;
+            margin-top: 10px;
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 5px;
+        }
+        
+        .success {
+            color: #4ade80;
+            margin-top: 10px;
+            text-align: center;
+            padding: 10px;
+            background: rgba(74, 222, 128, 0.1);
+            border-radius: 5px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .game-area {
+            text-align: center;
+        }
+        
+        .user-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .balance {
+            font-size: 1.5rem;
+            color: #ffd700;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🎯 SYMBOL DUEL</div>
+        <div class="subtitle">Multiplayer Rebus Puzzle Battles</div>
+        
+        <!-- Login Form -->
+        <div id="loginForm">
+            <h2 style="text-align: center; margin-bottom: 30px; color: #ffd700;">Enter the Arena</h2>
+            
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="Enter your email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+            
+            <button class="btn" id="loginButton" onclick="handleAuth()">Enter the Arena</button>
+            <p style="text-align: center; color: #ccc; margin-top: 15px;">New users will be automatically registered</p>
+            
+            <div id="message"></div>
+        </div>
+        
+        <!-- Game Area -->
+        <div id="gameArea" class="game-area hidden">
+            <div class="user-info">
+                <h2>Welcome to Symbol Duel!</h2>
+                <p>You are logged in successfully.</p>
+                <div class="balance">💰 Balance: $<span id="balance">1000</span></div>
+                <button class="btn" onclick="logout()" style="width: auto; padding: 10px 20px;">Logout</button>
+            </div>
+            
+            <div style="background: rgba(255, 255, 255, 0.1); padding: 30px; border-radius: 15px;">
+                <h3 style="color: #ffd700; margin-bottom: 20px;">🎮 Game Features</h3>
+                <p style="margin: 10px 0;">✅ Real-time multiplayer battles</p>
+                <p style="margin: 10px 0;">✅ Skill-based rebus puzzles</p>
+                <p style="margin: 10px 0;">✅ Real money prizes</p>
+                <p style="margin: 10px 0;">✅ Live leaderboards</p>
+                <p style="margin: 20px 0; color: #ffd700; font-weight: bold;">Ready to play and earn! 🚀</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK - Using the exact same version as the working template -->
+    <script src="https://www.gstatic.com/firebasejs/3.2.1/firebase.js"></script>
+    
+    <script>
+        // Firebase configuration - Your actual config
+        var config = {
+            apiKey: "AIzaSyCRovI9X-IWPYVtJAauHsvvE0XhHkJ8NEA",
+            authDomain: "symbol-duel.firebaseapp.com",
+            databaseURL: "https://symbol-duel-default-rtdb.firebaseio.com",
+            storageBucket: "symbol-duel.firebasestorage.app",
+            messagingSenderId: "115651908526",
+            appId: "1:115651908526:web:d0425e58de0991a38fee3f"
+        };
+        
+        // Initialize Firebase - Using the exact same method as the working template
+        firebase.initializeApp(config);
+        
+        // Get Firebase services
+        var auth = firebase.auth();
+        var database = firebase.database();
+        
+        // Handle authentication (login or register)
+        function handleAuth() {
+            var email = document.getElementById('email').value.trim();
+            var password = document.getElementById('password').value.trim();
+            var messageDiv = document.getElementById('message');
+            var loginButton = document.getElementById('loginButton');
+            
+            if (!email || !password) {
+                showMessage('Please enter both email and password', 'error');
+                return;
+            }
+            
+            // Disable button during processing
+            loginButton.disabled = true;
+            loginButton.textContent = 'Processing...';
+            
+            // Try to sign in first
+            auth.signInWithEmailAndPassword(email, password)
+                .then(function(userCredential) {
+                    // User signed in successfully
+                    showMessage('Login successful!', 'success');
+                    showGameArea();
+                })
+                .catch(function(error) {
+                    // If user doesn't exist, create new account
+                    if (error.code === 'auth/user-not-found') {
+                        auth.createUserWithEmailAndPassword(email, password)
+                            .then(function(userCredential) {
+                                // User created successfully
+                                showMessage('Account created and logged in!', 'success');
+                                
+                                // Create user document in database
+                                database.ref('users/' + userCredential.user.uid).set({
+                                    email: email,
+                                    username: email.split('@')[0],
+                                    balance: 1000,
+                                    createdAt: new Date().toISOString(),
+                                    gamesPlayed: 0,
+                                    gamesWon: 0,
+                                    totalEarnings: 0
+                                });
+                                
+                                showGameArea();
+                            })
+                            .catch(function(createError) {
+                                showMessage('Error creating account: ' + createError.message, 'error');
+                                resetButton();
+                            });
+                    } else {
+                        showMessage('Error: ' + error.message, 'error');
+                        resetButton();
+                    }
+                });
+        }
+        
+        // Logout function
+        function logout() {
+            auth.signOut().then(function() {
+                showMessage('Logged out successfully', 'success');
+                showLoginForm();
+            }).catch(function(error) {
+                showMessage('Error logging out: ' + error.message, 'error');
+            });
+        }
+        
+        // Show message helper
+        function showMessage(message, type) {
+            var messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = type;
+        }
+        
+        // Show/hide forms
+        function showGameArea() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('gameArea').classList.remove('hidden');
+            resetButton();
+        }
+        
+        function showLoginForm() {
+            document.getElementById('gameArea').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            resetButton();
+        }
+        
+        function resetButton() {
+            var loginButton = document.getElementById('loginButton');
+            loginButton.disabled = false;
+            loginButton.textContent = 'Enter the Arena';
+        }
+        
+        // Listen for auth state changes - Using the exact same method as the working template
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                showGameArea();
+            } else {
+                showLoginForm();
+            }
+        });
+        
+        // Allow Enter key to login
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleAuth();
+            }
+        });
+    </script>
+</body>
+</html>

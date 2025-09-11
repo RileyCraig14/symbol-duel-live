@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Symbol Duel - Multiplayer Rebus Battles</title>
+    
+    <!-- Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+        }
+        
+        .logo {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            color: #ffd700;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #ccc;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+        }
+        
+        input::placeholder {
+            color: #ccc;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .error {
+            color: #ff6b6b;
+            margin-top: 10px;
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 5px;
+        }
+        
+        .success {
+            color: #4ade80;
+            margin-top: 10px;
+            text-align: center;
+            padding: 10px;
+            background: rgba(74, 222, 128, 0.1);
+            border-radius: 5px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .game-area {
+            text-align: center;
+        }
+        
+        .user-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .balance {
+            font-size: 1.5rem;
+            color: #ffd700;
+            margin: 10px 0;
+        }
+        
+        .game-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .game-btn {
+            padding: 15px;
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .game-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .game-btn.primary {
+            background: linear-gradient(45deg, #4ade80, #22c55e);
+        }
+        
+        .game-btn.warning {
+            background: linear-gradient(45deg, #f59e0b, #d97706);
+        }
+        
+        .room-list {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .room-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .room-item:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
+        
+        .puzzle-area {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .puzzle-symbols {
+            font-size: 3rem;
+            margin: 20px 0;
+            color: #ffd700;
+        }
+        
+        .answer-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .timer {
+            font-size: 1.5rem;
+            color: #ffd700;
+            margin: 10px 0;
+        }
+        
+        .round-info {
+            font-size: 1.2rem;
+            color: #ccc;
+            margin: 10px 0;
+        }
+        
+        /* Enhanced feedback animations */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes celebration {
+            0% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.05) rotate(1deg); }
+            50% { transform: scale(1.1) rotate(-1deg); }
+            75% { transform: scale(1.05) rotate(1deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10% { transform: translateX(-5px); }
+            20% { transform: translateX(5px); }
+            30% { transform: translateX(-5px); }
+            40% { transform: translateX(5px); }
+            50% { transform: translateX(-5px); }
+            60% { transform: translateX(5px); }
+            70% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+            90% { transform: translateX(-5px); }
+        }
+        
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(-10px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        /* Enhanced message styling */
+        #message {
+            transition: all 0.3s ease-in-out;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-weight: bold;
+            text-align: center;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Submit button enhanced states */
+        .game-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed !important;
+        }
+        
+        .game-btn.primary:disabled {
+            background-color: #6b7280 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🎯 SYMBOL DUEL</div>
+        <div class="subtitle">Multiplayer Rebus Puzzle Battles</div>
+        <div style="text-align: center; color: #4ade80; font-size: 0.9rem; margin-bottom: 20px;">
+            ⚡ Real-time multiplayer • 💰 Tournament payouts • 🏆 Leaderboards
+        </div>
+        
+        <!-- Login Form -->
+        <div id="loginForm">
+            <h2 style="text-align: center; margin-bottom: 30px; color: #ffd700;">Enter the Arena</h2>
+            
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="Enter your email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+            
+            <button class="btn" id="loginButton" onclick="handleAuth()">Enter the Arena</button>
+            <p style="text-align: center; color: #ccc; margin-top: 15px;">New users will be automatically registered</p>
+            
+            <div id="message"></div>
+        </div>
+        
+        <!-- Game Area -->
+        <div id="gameArea" class="game-area hidden">
+            <div class="user-info">
+                <h2>Welcome to Symbol Duel!</h2>
+                <p>You are logged in successfully.</p>
+                <div class="balance">💰 Balance: $<span id="balance">1000</span></div>
+                <div class="game-buttons" style="margin-top: 15px;">
+                    <button class="game-btn primary" onclick="showGameMenu()" style="width: auto; padding: 10px 20px;">🎮 Go to Game</button>
+                    <button class="btn" onclick="logout()" style="width: auto; padding: 10px 20px;">Logout</button>
+                </div>
+            </div>
+            
+            <!-- Main Game Menu -->
+            <div id="gameMenu">
+                <div class="game-buttons">
+                    <button class="game-btn primary" onclick="showCreateRoom()">🏠 Create Room</button>
+                    <button class="game-btn primary" onclick="showJoinRoom()">🚪 Join Room</button>
+                    <button class="game-btn warning" onclick="showLeaderboard()">🏆 Leaderboard</button>
+                    <button class="game-btn" onclick="showAddFunds()">💳 Add Funds</button>
+                </div>
+            </div>
+            
+            <!-- Create Room -->
+            <div id="createRoom" class="hidden">
+                <h3 style="color: #ffd700; margin-bottom: 20px;">🏠 Create Game Room</h3>
+                <div class="form-group">
+                    <label for="roomName">Room Name:</label>
+                    <input type="text" id="roomName" placeholder="Enter room name" value="Riley's Room">
+                </div>
+                <div class="form-group">
+                    <label for="entryFee">Entry Fee ($):</label>
+                    <input type="number" id="entryFee" placeholder="10" value="10" min="1" max="100">
+                </div>
+                <div class="game-buttons">
+                    <button class="game-btn primary" onclick="createRoom()">Create Room</button>
+                    <button class="game-btn" onclick="showGameMenu()">Back</button>
+                </div>
+            </div>
+            
+            <!-- Join Room -->
+            <div id="joinRoom" class="hidden">
+                <h3 style="color: #ffd700; margin-bottom: 20px;">🚪 Join Game Room</h3>
+                <div class="room-list" id="roomList">
+                    <div style="text-align: center; padding: 20px; color: #ccc;">
+                        Loading available rooms...
+                    </div>
+                </div>
+                <button class="game-btn" onclick="showGameMenu()">Back</button>
+            </div>
+            
+            <!-- Game Room -->
+            <div id="gameRoom" class="hidden">
+                <h3 style="color: #ffd700; margin-bottom: 20px;">🎮 Game Room: <span id="currentRoomName">Room 1</span></h3>
+                <div id="gameStatus" style="text-align: center; margin: 20px 0; color: #ffd700;"></div>
+                <div id="roomInfo" style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; margin: 15px 0;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem;">
+                        <div>💰 Entry Fee: $<span id="roomEntryFee">10</span></div>
+                        <div>👥 Players: <span id="roomPlayerCount">1</span>/6</div>
+                        <div>🏆 Prize Pool: $<span id="roomPrizePool">0</span></div>
+                        <div>🎯 Winner Takes: 94%</div>
+                    </div>
+                </div>
+                <div id="startGameButton" class="hidden" style="text-align: center; margin: 20px 0;">
+                    <button class="game-btn primary" onclick="startGameManually()">Start Game</button>
+                </div>
+                <div id="puzzle-area" class="puzzle-area hidden">
+                    <div class="round-info">Round <span id="currentRound">1</span> of 5</div>
+                    <div style="color: #4ade80; font-size: 0.9rem; margin: 5px 0;">
+                        Difficulty: <span id="currentDifficulty">Easy</span> • Points: <span id="currentPoints">10</span>
+                    </div>
+                    <h4>Rebus Puzzle</h4>
+                    <div class="puzzle-symbols" id="puzzleSymbols">🎵 + 🏠 = ?</div>
+                    <div class="timer">Time: <span id="timer">30</span>s</div>
+                    <input type="text" class="answer-input" id="answerInput" placeholder="Enter your answer">
+                    <div class="game-buttons">
+                        <button class="game-btn primary" onclick="submitAnswer()">Submit Answer</button>
+                        <button class="game-btn" onclick="leaveRoom()">Leave Room</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Leaderboard -->
+            <div id="leaderboard" class="hidden">
+                <h3 style="color: #ffd700; margin-bottom: 20px;">🏆 Top Players</h3>
+                <div class="room-list" id="leaderboardList">
+                    <div style="padding: 20px; text-align: center; color: #ccc;">
+                        Loading leaderboard...
+                    </div>
+                </div>
+                <div class="game-buttons">
+                    <button class="game-btn" onclick="showGameMenu()">Back</button>
+                    <button class="game-btn primary" onclick="loadStats()">📊 Game Stats</button>
+                </div>
+            </div>
+            
+            <!-- Game Statistics -->
+            <div id="gameStats" class="hidden">
+                <h3 style="color: #ffd700; margin-bottom: 20px;">📊 Game Statistics</h3>
+                <div class="room-list" id="statsList">
+                    <div style="padding: 20px; text-align: center; color: #ccc;">
+                        Loading statistics...
+                    </div>
+                </div>
+                <button class="game-btn" onclick="showLeaderboard()">Back to Leaderboard</button>
+            </div>
+            
+            <!-- Add Funds -->
+            <div id="addFunds" class="hidden">
+                <h3 style="color: #ffd700; margin-bottom: 20px;">💳 Add Funds</h3>
+                <div class="form-group">
+                    <label for="amount">Amount ($):</label>
+                    <input type="number" id="amount" placeholder="50" value="50" min="10" max="1000">
+                </div>
+                <div class="game-buttons">
+                    <button class="game-btn primary" onclick="addFunds()">Add Funds</button>
+                    <button class="game-btn" onclick="showGameMenu()">Back</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <script>
+        // Game state
+        var gameState = {
+            currentRoom: null,
+            gamePhase: 'menu',
+            score: 0,
+            timeLeft: 30,
+            round: 1,
+            balance: 1000,
+            playerName: 'Player' + Math.floor(Math.random() * 1000), // Generate random player name
+            currentEntryFee: 0
+        };
+        
+        // Socket.IO connection
+        var socket = null;
+        var isConnected = false;
+        var currentPuzzle = null;
+        var gameTimer = null;
+        
+        // Initialize Socket.IO connection
+        function initializeSocket() {
+            if (socket) {
+                socket.disconnect();
+            }
+            
+            socket = io('http://localhost:3000', {
+                transports: ['websocket'],
+                timeout: 20000,
+                forceNew: true
+            });
+            
+            // Connection events
+            socket.on('connect', function() {
+                console.log('Connected to game server');
+                isConnected = true;
+                showMessage('Connected to game server', 'success');
+                
+                // Send player name to server
+                socket.emit('register_player', {
+                    name: gameState.playerName
+                });
+                
+                // Test event listener
+                socket.on('test_event', function(data) {
+                    console.log('Test event received:', data);
+                    showMessage('Test event: ' + data.message, 'success');
+                });
+                
+                // Send heartbeat every 30 seconds to keep connection alive
+                setInterval(function() {
+                    if (socket && isConnected) {
+                        socket.emit('ping');
+                    }
+                }, 30000);
+            });
+            
+            socket.on('disconnect', function() {
+                console.log('Disconnected from game server');
+                isConnected = false;
+                showMessage('Disconnected from game server', 'error');
+            });
+            
+            socket.on('connect_error', function(error) {
+                console.error('Connection error:', error);
+                isConnected = false;
+                showMessage('Connection error. Please refresh the page.', 'error');
+            });
+            
+            socket.on('reconnect', function() {
+                console.log('Reconnected to server');
+                isConnected = true;
+                showMessage('Reconnected to server', 'success');
+                // Rejoin room if we were in one
+                if (gameState.currentRoom) {
+                    socket.emit('join_room', { roomId: gameState.currentRoom });
+                }
+            });
+            
+            socket.on('reconnect_error', function(error) {
+                console.error('Reconnection error:', error);
+                showMessage('Reconnection failed. Please refresh the page.', 'error');
+            });
+            
+            // Game events
+            socket.on('room_created', function(data) {
+                gameState.currentRoom = data.roomId;
+                joinGameRoom(data.roomId, data.room.name);
+                showMessage('Room created successfully!', 'success');
+            });
+            
+            socket.on('room_joined', function(data) {
+                gameState.currentRoom = data.roomId;
+                joinGameRoom(data.roomId, data.room.name);
+                showMessage('Joined room successfully!', 'success');
+            });
+            
+            socket.on('room_updated', function(roomData) {
+                updateGameStatus(roomData);
+            });
+            
+            socket.on('game_started', function(gameData) {
+                startGameFromServer(gameData);
+            });
+            
+            socket.on('question_updated', function(questionData) {
+                displayQuestion(questionData);
+            });
+            
+            socket.on('player_answered', function(answerData) {
+                console.log('Player answered event:', answerData);
+                handlePlayerAnswer(answerData);
+                
+                // If this is the current player's answer, show immediate feedback
+                if (answerData.playerName === gameState.playerName) {
+                    var message = '';
+                    if (answerData.correct) {
+                        message = '✅ Correct! +' + answerData.points + ' points';
+                    } else {
+                        message = '❌ Incorrect! The answer was: ' + answerData.correctAnswer;
+                    }
+                    showMessage(message, answerData.correct ? 'success' : 'error');
+                    
+                    // Update score if correct
+                    if (answerData.correct) {
+                        gameState.score += answerData.points;
+                    }
+                } else {
+                    // Show other players' answers
+                    var otherMessage = answerData.playerName + ' answered';
+                    if (answerData.correct) {
+                        otherMessage += ' correctly! +' + answerData.points + ' points';
+                    } else {
+                        otherMessage += ' incorrectly';
+                    }
+                    showMessage(otherMessage, answerData.correct ? 'success' : 'error');
+                }
+            });
+            
+            // Direct answer result event
+            socket.on('answer_result', function(result) {
+                console.log('Direct answer result:', result);
+                
+                // Reset submit button to normal state
+                var submitBtn = document.querySelector('button[onclick="submitAnswer()"]');
+                submitBtn.innerHTML = 'Submit Answer';
+                submitBtn.style.backgroundColor = '';
+                submitBtn.style.cursor = '';
+                
+                // Remove pulse animation
+                var puzzleArea = document.getElementById('puzzle-area');
+                puzzleArea.style.animation = '';
+                
+                var message = '';
+                var messageType = '';
+                
+                if (result.correct) {
+                    message = '🎉 <strong>CORRECT!</strong> 🎉<br/>+' + result.points + ' points<br/>Your answer: "' + result.yourAnswer + '"<br/>Attempts: ' + result.attempts;
+                    messageType = 'success';
+                    
+                    // Add celebration effect
+                    addCelebrationEffect();
+                    
+                    // Update score display immediately
+                    gameState.score += result.points;
+                    updateScoreDisplay();
+                    
+                    // Disable input and button since they got it right
+                    document.getElementById('answerInput').disabled = true;
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '✅ Got it!';
+                    
+                } else {
+                    message = '❌ <strong>TRY AGAIN!</strong> ❌<br/>Your answer: "' + result.yourAnswer + '"<br/>Attempts: ' + result.attempts + '<br/>Keep trying!';
+                    messageType = 'error';
+                    
+                    // Add shake effect for wrong answer
+                    addShakeEffect();
+                    
+                    // Re-enable input for another attempt
+                    document.getElementById('answerInput').disabled = false;
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Submit Answer';
+                    submitBtn.style.backgroundColor = '';
+                    submitBtn.style.cursor = '';
+                    document.getElementById('answerInput').value = '';
+                    document.getElementById('answerInput').focus();
+                    
+                    console.log('Re-enabled submit button for retry');
+                }
+                
+                showEnhancedMessage(message, messageType);
+                
+                // Show different follow-up messages based on attempts
+                setTimeout(function() {
+                    if (result.correct) {
+                        showEnhancedMessage('💡 Great job! You earned ' + result.points + ' points!', 'success');
+                    } else {
+                        showEnhancedMessage('💭 Keep trying! You have until the timer runs out.', 'info');
+                    }
+                }, 2000);
+            });
+            
+            socket.on('game_ended', function(results) {
+                endGameFromServer(results);
+            });
+            
+            socket.on('room_ready_for_next_game', function(data) {
+                console.log('Room ready for next game:', data);
+                showEnhancedMessage('🎮 ' + data.message, 'info');
+                
+                // Show start game button again
+                document.getElementById('startGameButton').classList.remove('hidden');
+                document.getElementById('puzzle-area').classList.add('hidden');
+            });
+            
+            socket.on('error', function(error) {
+                console.error('Socket error:', error);
+                showMessage('Game error: ' + error.message, 'error');
+            });
+            
+            socket.on('rooms_list', function(rooms) {
+                displayRoomsList(rooms);
+            });
+        }
+        
+        // Firebase Authentication
+        let auth = null;
+        let db = null;
+        let currentUser = null;
+        let stripe = null;
+
+        // Initialize Stripe
+        function initializeStripe() {
+            try {
+                // Get Stripe key from environment or use test key for development
+                const stripeKey = window.STRIPE_PUBLISHABLE_KEY || 'pk_test_your_test_key_here';
+                stripe = Stripe(stripeKey);
+                console.log('Stripe initialized successfully');
+            } catch (error) {
+                console.error('Stripe initialization error:', error);
+            }
+        }
+
+        // Payment processing
+        async function processPayment(amount, gameId) {
+            if (!stripe) {
+                showMessage('Payment system not available', 'error');
+                return false;
+            }
+
+            try {
+                showMessage('Processing payment...', 'info');
+                
+                // Create payment intent
+                const response = await fetch('/api/create-payment-intent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        amount: amount * 100, // Convert to cents
+                        currency: 'usd',
+                        gameId: gameId
+                    })
+                });
+
+                const { clientSecret, paymentIntentId } = await response.json();
+
+                if (!clientSecret) {
+                    throw new Error('Failed to create payment intent');
+                }
+
+                // Confirm payment
+                const { error, paymentIntent } = await stripe.confirmPayment({
+                    clientSecret,
+                    confirmParams: {
+                        return_url: window.location.href,
+                    },
+                });
+
+                if (error) {
+                    console.error('Payment failed:', error);
+                    showMessage('Payment failed: ' + error.message, 'error');
+                    return false;
+                }
+
+                if (paymentIntent.status === 'succeeded') {
+                    showMessage('Payment successful! Welcome to the game!', 'success');
+                    return true;
+                } else {
+                    showMessage('Payment not completed', 'error');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                showMessage('Payment error: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        // Initialize Firebase
+        async function initializeFirebase() {
+            try {
+                // Import Firebase modules
+                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+                const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+                const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+
+                const firebaseConfig = {
+                    apiKey: "AIzaSyCRovI9X-IWPYVtJAauHsvvE0XhHkJ8NEA",
+                    authDomain: "symbol-duel.firebaseapp.com",
+                    projectId: "symbol-duel",
+                    storageBucket: "symbol-duel.firebasestorage.app",
+                    messagingSenderId: "115651908526",
+                    appId: "1:115651908526:web:d0425e58de0991a38fee3f",
+                    measurementId: "G-BNTRQY9YVY"
+                };
+
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Listen for auth state changes
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        console.log('User signed in:', user.email);
+                        showGameArea();
+                    } else {
+                        currentUser = null;
+                        console.log('User signed out');
+                        showLoginForm();
+                    }
+                });
+
+                console.log('Firebase initialized successfully');
+            } catch (error) {
+                console.error('Firebase initialization error:', error);
+                showMessage('Firebase initialization failed. Using demo mode.', 'error');
+            }
+        }
+
+        // Authentication handler
+        async function handleAuth() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!email || !password) {
+                showMessage('Please enter both email and password', 'error');
+                return;
+            }
+
+            if (!auth) {
+                showMessage('Firebase not initialized. Using demo mode.', 'error');
+                showGameArea();
+                return;
+            }
+
+            try {
+                showMessage('Signing in...', 'info');
+                
+                // Try to sign in first
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    showMessage('Welcome back!', 'success');
+                } catch (signInError) {
+                    // If sign in fails, try to create new user
+                    if (signInError.code === 'auth/user-not-found') {
+                        try {
+                            await createUserWithEmailAndPassword(auth, email, password);
+                            showMessage('Account created successfully!', 'success');
+                        } catch (createError) {
+                            throw createError;
+                        }
+                    } else {
+                        throw signInError;
+                    }
+                }
+            } catch (error) {
+                console.error('Authentication error:', error);
+                let errorMessage = 'Authentication failed';
+                
+                switch (error.code) {
+                    case 'auth/weak-password':
+                        errorMessage = 'Password should be at least 6 characters';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Invalid email address';
+                        break;
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'Email already in use';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Wrong password';
+                        break;
+                    case 'auth/user-not-found':
+                        errorMessage = 'User not found';
+                        break;
+                }
+                
+                showMessage(errorMessage, 'error');
+            }
+        }
+        }
+        
+        function logout() {
+            if (auth && currentUser) {
+                auth.signOut().then(() => {
+                    showMessage('Logged out successfully', 'success');
+                }).catch((error) => {
+                    console.error('Logout error:', error);
+                    showMessage('Logout failed', 'error');
+                });
+            } else {
+                showMessage('Logged out successfully', 'success');
+                showLoginForm();
+            }
+        }
+        
+        function showMessage(message, type) {
+            var messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = type;
+        }
+        
+        function showEnhancedMessage(message, type) {
+            var messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = message;
+            messageDiv.className = type;
+            
+            // Add enhanced styling based on type
+            switch(type) {
+                case 'success':
+                    messageDiv.style.backgroundColor = '#10b981';
+                    messageDiv.style.color = 'white';
+                    messageDiv.style.border = '2px solid #059669';
+                    messageDiv.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                    break;
+                case 'error':
+                    messageDiv.style.backgroundColor = '#ef4444';
+                    messageDiv.style.color = 'white';
+                    messageDiv.style.border = '2px solid #dc2626';
+                    messageDiv.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
+                    break;
+                case 'info':
+                    messageDiv.style.backgroundColor = '#3b82f6';
+                    messageDiv.style.color = 'white';
+                    messageDiv.style.border = '2px solid #2563eb';
+                    messageDiv.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                    break;
+            }
+            
+            // Auto-hide after 3 seconds for info messages
+            if (type === 'info') {
+                setTimeout(function() {
+                    messageDiv.style.backgroundColor = '';
+                    messageDiv.style.color = '';
+                    messageDiv.style.border = '';
+                    messageDiv.style.boxShadow = '';
+                }, 3000);
+            }
+        }
+        
+        function addCelebrationEffect() {
+            var puzzleArea = document.getElementById('puzzle-area');
+            puzzleArea.style.animation = 'celebration 0.6s ease-in-out';
+            
+            // Add confetti effect (simple version)
+            createConfetti();
+            
+            setTimeout(function() {
+                puzzleArea.style.animation = '';
+            }, 600);
+        }
+        
+        function addShakeEffect() {
+            var puzzleArea = document.getElementById('puzzle-area');
+            puzzleArea.style.animation = 'shake 0.5s ease-in-out';
+            
+            setTimeout(function() {
+                puzzleArea.style.animation = '';
+            }, 500);
+        }
+        
+        function createConfetti() {
+            var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'];
+            var confettiCount = 20;
+            
+            for (var i = 0; i < confettiCount; i++) {
+                var confetti = document.createElement('div');
+                confetti.style.position = 'absolute';
+                confetti.style.width = '10px';
+                confetti.style.height = '10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * window.innerWidth + 'px';
+                confetti.style.top = '-10px';
+                confetti.style.borderRadius = '50%';
+                confetti.style.pointerEvents = 'none';
+                confetti.style.zIndex = '1000';
+                confetti.style.animation = 'confettiFall 2s linear forwards';
+                
+                document.body.appendChild(confetti);
+                
+                setTimeout(function() {
+                    confetti.remove();
+                }, 2000);
+            }
+        }
+        
+        function updateScoreDisplay() {
+            // Update any score display elements if they exist
+            var scoreElements = document.querySelectorAll('.score-display, #currentScore');
+            scoreElements.forEach(function(element) {
+                element.textContent = gameState.score;
+            });
+        }
+        
+        function showGameArea() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('gameArea').classList.remove('hidden');
+            initializeSocket();
+        }
+        
+        function showLoginForm() {
+            document.getElementById('gameArea').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                isConnected = false;
+            }
+        }
+        
+        function showGameMenu() {
+            hideAllScreens();
+            document.getElementById('gameMenu').classList.remove('hidden');
+            gameState.gamePhase = 'menu';
+        }
+        
+        function showCreateRoom() {
+            hideAllScreens();
+            document.getElementById('createRoom').classList.remove('hidden');
+        }
+        
+        function showJoinRoom() {
+            hideAllScreens();
+            document.getElementById('joinRoom').classList.remove('hidden');
+            loadAvailableRooms();
+        }
+        
+        function showLeaderboard() {
+            hideAllScreens();
+            document.getElementById('leaderboard').classList.remove('hidden');
+            loadLeaderboard();
+        }
+        
+        function loadLeaderboard() {
+            // Fetch leaderboard data from API
+            fetch('/api/leaderboard')
+                .then(response => response.json())
+                .then(data => {
+                    displayLeaderboard(data);
+                })
+                .catch(error => {
+                    console.error('Error loading leaderboard:', error);
+                    displayLeaderboard([]);
+                });
+        }
+        
+        function displayLeaderboard(players) {
+            var leaderboard = document.getElementById('leaderboardList');
+            leaderboard.innerHTML = '';
+            
+            if (players.length === 0) {
+                leaderboard.innerHTML = '<div style="text-align: center; padding: 20px; color: #ccc;">No players yet! Be the first to play!</div>';
+                return;
+            }
+            
+            players.forEach(function(player, index) {
+                var item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                var medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1) + '.';
+                
+                item.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center;">' +
+                    '<div>' +
+                        '<span style="font-size: 1.2rem;">' + medal + '</span> ' +
+                        '<strong>' + player.name + '</strong><br>' +
+                        '<small style="color: #ccc;">Win Rate: ' + player.winRate.toFixed(1) + '% | Games: ' + player.gamesPlayed + '</small>' +
+                    '</div>' +
+                    '<div style="text-align: right;">' +
+                        '<div style="color: #4ade80; font-weight: bold;">$' + player.totalWinnings.toFixed(2) + '</div>' +
+                        '<small style="color: #ccc;">Net: $' + (player.totalWinnings - player.totalSpent).toFixed(2) + '</small>' +
+                    '</div>' +
+                '</div>';
+                
+                leaderboard.appendChild(item);
+            });
+        }
+        
+        function showAddFunds() {
+            hideAllScreens();
+            document.getElementById('addFunds').classList.remove('hidden');
+        }
+        
+        async function addFunds() {
+            const amount = parseFloat(document.getElementById('amount').value);
+            
+            if (!amount || amount < 10) {
+                showMessage('Please enter a valid amount (minimum $10)', 'error');
+                return;
+            }
+            
+            const success = await processPayment(amount, 'add-funds');
+            if (success) {
+                showMessage(`Successfully added $${amount} to your account!`, 'success');
+                showGameMenu();
+            }
+        }
+        
+        function hideAllScreens() {
+            var screens = ['gameMenu', 'createRoom', 'joinRoom', 'gameRoom', 'leaderboard', 'gameStats', 'addFunds'];
+            screens.forEach(function(screen) {
+                document.getElementById(screen).classList.add('hidden');
+            });
+        }
+        
+        function loadStats() {
+            hideAllScreens();
+            document.getElementById('gameStats').classList.remove('hidden');
+            
+            // Fetch game statistics from API
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => {
+                    displayStats(data);
+                })
+                .catch(error => {
+                    console.error('Error loading stats:', error);
+                    displayStats({});
+                });
+        }
+        
+        function displayStats(stats) {
+            var statsList = document.getElementById('statsList');
+            statsList.innerHTML = '';
+            
+            var statsItems = [
+                { label: 'Total Games Played', value: stats.totalGames || 0, icon: '🎮' },
+                { label: 'Total Players', value: stats.totalPlayers || 0, icon: '👥' },
+                { label: 'Total Volume', value: '$' + (stats.totalVolume || 0).toFixed(2), icon: '💰' },
+                { label: 'Average Game Size', value: (stats.averageGameSize || 0).toFixed(1) + ' players', icon: '📊' },
+                { label: 'House Edge', value: '6%', icon: '🏠' },
+                { label: 'Player Payout Rate', value: '94%', icon: '🎯' }
+            ];
+            
+            statsItems.forEach(function(item) {
+                var statItem = document.createElement('div');
+                statItem.className = 'leaderboard-item';
+                statItem.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center;">' +
+                    '<div>' +
+                        '<span style="font-size: 1.2rem;">' + item.icon + '</span> ' +
+                        '<strong>' + item.label + '</strong>' +
+                    '</div>' +
+                    '<div style="color: #4ade80; font-weight: bold; font-size: 1.1rem;">' + item.value + '</div>' +
+                '</div>';
+                
+                statsList.appendChild(statItem);
+            });
+        }
+        
+        function createRoom() {
+            var roomName = document.getElementById('roomName').value.trim();
+            var entryFee = parseInt(document.getElementById('entryFee').value);
+            
+            if (!roomName || !entryFee) {
+                showMessage('Please enter room name and entry fee', 'error');
+                return;
+            }
+            
+            if (entryFee < 1 || entryFee > 100) {
+                showMessage('Entry fee must be between $1 and $100', 'error');
+                return;
+            }
+            
+            // Check if player has enough balance
+            if (gameState.balance < entryFee) {
+                showMessage('Insufficient balance. Please add funds.', 'error');
+                return;
+            }
+            
+            // Store entry fee for this game
+            gameState.currentEntryFee = entryFee;
+            
+            if (!isConnected || !socket) {
+                showMessage('Not connected to server. Please refresh the page.', 'error');
+                return;
+            }
+            
+            socket.emit('create_room', {
+                roomName: roomName,
+                entryFee: entryFee
+            });
+        }
+        
+        function joinRoom(roomId) {
+            if (!isConnected || !socket) {
+                showMessage('Not connected to server. Please refresh the page.', 'error');
+                return;
+            }
+            
+            // Find the room to get entry fee
+            var roomElement = document.querySelector('[data-room-id="' + roomId + '"]');
+            if (roomElement) {
+                var entryFeeText = roomElement.querySelector('.room-entry-fee').textContent;
+                var entryFee = parseInt(entryFeeText.replace('$', ''));
+                
+                // Check if player has enough balance
+                if (gameState.balance < entryFee) {
+                    showMessage('Insufficient balance. Please add funds.', 'error');
+                    return;
+                }
+                
+                // Store entry fee for this game
+                gameState.currentEntryFee = entryFee;
+            }
+            
+            socket.emit('join_room', {
+                roomId: roomId
+            });
+        }
+        
+        function joinGameRoom(roomId, roomName) {
+            hideAllScreens();
+            document.getElementById('gameRoom').classList.remove('hidden');
+            document.getElementById('currentRoomName').textContent = roomName;
+            gameState.gamePhase = 'waiting';
+        }
+        
+        function updateGameStatus(room) {
+            var statusDiv = document.getElementById('gameStatus');
+            var startButton = document.getElementById('startGameButton');
+            var statusText = '';
+            
+            // Update room info
+            document.getElementById('roomEntryFee').textContent = room.entryFee || 10;
+            document.getElementById('roomPlayerCount').textContent = room.players.length || 1;
+            var totalPot = (room.entryFee || 10) * (room.players.length || 1);
+            var prizePool = totalPot * 0.94; // 94% to players
+            document.getElementById('roomPrizePool').textContent = prizePool.toFixed(2);
+            
+            if (room.status === 'waiting') {
+                statusText = 'Waiting for players... (' + room.players.length + '/' + room.maxPlayers + ')';
+                if (room.players.length >= 2) {
+                    statusText += ' - Ready to start!';
+                    // Show start button only for host
+                    console.log('Debug - Host ID:', room.hostId, 'Socket ID:', socket.id, 'Is Host:', room.hostId === socket.id);
+                    if (room.hostId === socket.id) {
+                        startButton.classList.remove('hidden');
+                        console.log('Start button should be visible now');
+                    } else {
+                        startButton.classList.add('hidden');
+                        console.log('Not the host, hiding start button');
+                    }
+                } else {
+                    startButton.classList.add('hidden');
+                }
+            } else if (room.status === 'playing') {
+                statusText = 'Round ' + room.currentRound + '/' + room.totalRounds + ' - Players: ' + room.playerNames.join(', ');
+                startButton.classList.add('hidden');
+            } else if (room.status === 'finished') {
+                statusText = 'Game finished! Winner: ' + (room.winner || 'Tie');
+                startButton.classList.add('hidden');
+            }
+            
+            statusDiv.textContent = statusText;
+        }
+        
+        function startGameManually() {
+            if (!isConnected || !socket) {
+                showMessage('Not connected to server. Please refresh the page.', 'error');
+                return;
+            }
+            
+            console.log('Attempting to start game for room:', gameState.currentRoom);
+            socket.emit('start_game', {
+                roomId: gameState.currentRoom
+            });
+        }
+        
+        function startGameFromServer(gameData) {
+            console.log('Game started from server:', gameData);
+            gameState.gamePhase = 'playing';
+            gameState.round = 1;
+            gameState.score = 0;
+            
+            // Hide start button
+            document.getElementById('startGameButton').classList.add('hidden');
+            
+            // Show puzzle area
+            document.getElementById('puzzle-area').classList.remove('hidden');
+        }
+        
+        function displayQuestion(questionData) {
+            console.log('Displaying question:', questionData);
+            currentPuzzle = questionData;
+            document.getElementById('puzzleSymbols').textContent = questionData.symbols + ' = ?';
+            document.getElementById('answerInput').value = '';
+            
+            // Re-enable input and button for new round
+            var answerInput = document.getElementById('answerInput');
+            var submitBtn = document.querySelector('button[onclick="submitAnswer()"]');
+            
+            answerInput.disabled = false;
+            submitBtn.disabled = false;
+            
+            // Reset button appearance
+            submitBtn.innerHTML = 'Submit Answer';
+            submitBtn.style.backgroundColor = '';
+            submitBtn.style.cursor = '';
+            
+            // Clear any previous animations
+            var puzzleArea = document.getElementById('puzzle-area');
+            puzzleArea.style.animation = '';
+            
+            // Update difficulty and points display
+            document.getElementById('currentDifficulty').textContent = questionData.difficulty.charAt(0).toUpperCase() + questionData.difficulty.slice(1);
+            document.getElementById('currentPoints').textContent = questionData.points;
+            
+            // Show new question message
+            showEnhancedMessage('🎯 New puzzle! Good luck!', 'info');
+            
+            // Update round counter
+            document.getElementById('currentRound').textContent = questionData.round || 1;
+            
+            // Reset and start timer with server's time limit
+            clearInterval(gameTimer);
+            gameState.timeLeft = questionData.timeLimit || 30;
+            startGameTimer();
+        }
+        
+        function handlePlayerAnswer(answerData) {
+            console.log('Player answered:', answerData);
+            // Update UI to show other players' answers
+            var message = answerData.playerName + ' answered';
+            if (answerData.correct) {
+                message += ' correctly! +' + answerData.points + ' points';
+                showMessage(message, 'success');
+            } else {
+                message += ' incorrectly';
+                showMessage(message, 'error');
+            }
+        }
+        
+        function endGameFromServer(results) {
+            clearInterval(gameTimer);
+            gameState.gamePhase = 'finished';
+            
+            console.log('Game ended with results:', results);
+            
+            // Find current player's result
+            var currentPlayerName = gameState.playerName || 'Player';
+            var playerResult = results.payoutResults.payouts.find(function(payout) {
+                return payout.playerName === currentPlayerName;
+            });
+            
+            // Calculate balance changes
+            var entryFee = gameState.currentEntryFee || 0;
+            var winnings = playerResult ? playerResult.amount : 0;
+            var netChange = winnings - entryFee;
+            
+            // Update balance
+            gameState.balance += netChange;
+            document.getElementById('balance').textContent = gameState.balance.toFixed(2);
+            
+            // Display results
+            var winnerName = results.winner;
+            var winnerAmount = results.payoutResults.payouts[0]?.amount || 0;
+            
+            var resultMessage = 'Game finished!\n';
+            resultMessage += 'Winner: ' + winnerName + ' - $' + winnerAmount.toFixed(2) + '\n';
+            resultMessage += 'Your result: ' + (playerResult ? '$' + playerResult.amount.toFixed(2) + ' (Position #' + playerResult.position + ')' : 'No payout') + '\n';
+            resultMessage += 'Net change: ' + (netChange >= 0 ? '+' : '') + '$' + netChange.toFixed(2) + '\n';
+            resultMessage += 'New balance: $' + gameState.balance.toFixed(2);
+            
+            showMessage(resultMessage, netChange >= 0 ? 'success' : 'error');
+            
+            // Show detailed payout breakdown
+            setTimeout(function() {
+                showPayoutBreakdown(results);
+            }, 3000);
+            
+            // Hide puzzle area
+            document.getElementById('puzzle-area').classList.add('hidden');
+        }
+        
+        function showPayoutBreakdown(results) {
+            var breakdown = '🏆 TOURNAMENT RESULTS 🏆\n\n';
+            breakdown += 'Total Pot: $' + results.totalPot.toFixed(2) + '\n';
+            breakdown += 'House Take (6%): $' + results.houseTake.toFixed(2) + '\n';
+            breakdown += 'Player Pot (94%): $' + results.playerPot.toFixed(2) + '\n\n';
+            
+            breakdown += 'PAYOUTS:\n';
+            results.payoutResults.payouts.forEach(function(payout) {
+                breakdown += '#' + payout.position + ' ' + payout.playerName + ': $' + payout.amount.toFixed(2) + '\n';
+            });
+            
+            alert(breakdown);
+        }
+        
+        function submitAnswer() {
+            var answer = document.getElementById('answerInput').value.trim().toLowerCase();
+            
+            if (!answer) {
+                showMessage('Please enter an answer', 'error');
+                return;
+            }
+            
+            if (!isConnected || !socket) {
+                showMessage('Not connected to server. Please refresh the page.', 'error');
+                return;
+            }
+            
+            console.log('Submitting answer:', answer, 'for room:', gameState.currentRoom);
+            
+            // Get submit button and input elements
+            var submitBtn = document.querySelector('button[onclick="submitAnswer()"]');
+            var answerInput = document.getElementById('answerInput');
+            
+            // Disable input and button immediately to prevent double submission
+            answerInput.disabled = true;
+            submitBtn.disabled = true;
+            
+            // Enhanced visual feedback - change button appearance
+            submitBtn.innerHTML = '⏳ Checking...';
+            submitBtn.style.backgroundColor = '#f59e0b';
+            submitBtn.style.cursor = 'not-allowed';
+            
+            // Show immediate feedback with better styling
+            showEnhancedMessage('🎯 Answer submitted! Checking...', 'info');
+            
+            // Add visual pulse effect to the puzzle area
+            var puzzleArea = document.getElementById('puzzle-area');
+            puzzleArea.style.animation = 'pulse 0.5s ease-in-out';
+            
+            socket.emit('submit_answer', {
+                roomId: gameState.currentRoom,
+                answer: answer
+            });
+        }
+        
+        function startGameTimer() {
+            // Don't reset timeLeft here - it should be set by displayQuestion
+            gameTimer = setInterval(function() {
+                gameState.timeLeft--;
+                document.getElementById('timer').textContent = gameState.timeLeft;
+                if (gameState.timeLeft <= 0) {
+                    clearInterval(gameTimer);
+                    showMessage('Time\'s up!', 'error');
+                    
+                    // Disable input when time runs out
+                    document.getElementById('answerInput').disabled = true;
+                    document.querySelector('button[onclick="submitAnswer()"]').disabled = true;
+                    
+                    // Notify server that time is up
+                    if (socket && gameState.currentRoom) {
+                        socket.emit('time_up', {
+                            roomId: gameState.currentRoom
+                        });
+                    }
+                }
+            }, 1000);
+        }
+        
+        function leaveRoom() {
+            if (gameTimer) {
+                clearInterval(gameTimer);
+                gameTimer = null;
+            }
+            
+            gameState.currentRoom = null;
+            gameState.gamePhase = 'menu';
+            showGameMenu();
+        }
+        
+        function loadAvailableRooms() {
+            if (!isConnected || !socket) {
+                showMessage('Not connected to server. Please refresh the page.', 'error');
+                return;
+            }
+            
+            socket.emit('get_rooms');
+        }
+        
+        function displayRoomsList(rooms) {
+            var roomList = document.getElementById('roomList');
+            roomList.innerHTML = '';
+            
+            if (rooms.length === 0) {
+                roomList.innerHTML = '<div style="text-align: center; padding: 20px; color: #ccc;">No rooms available. Create one!</div>';
+                return;
+            }
+            
+            rooms.forEach(function(room) {
+                var roomItem = document.createElement('div');
+                roomItem.className = 'room-item';
+                roomItem.innerHTML = '<strong>' + room.name + '</strong> - $' + room.entryFee + ' entry - ' + room.playerCount + '/' + room.maxPlayers + ' players';
+                roomItem.onclick = function() { joinRoom(room.id); };
+                roomList.appendChild(roomItem);
+            });
+        }
+        
+        function processPayment() {
+            var amount = parseInt(document.getElementById('amount').value);
+            
+            if (!amount || amount < 10) {
+                showMessage('Please enter a valid amount (minimum $10)', 'error');
+                return;
+            }
+            
+            // Simulate payment
+            gameState.balance += amount;
+            document.getElementById('balance').textContent = gameState.balance;
+            showMessage('Payment successful! Balance updated.', 'success');
+            showGameMenu();
+        }
+        
+        // Allow Enter key to login
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (document.getElementById('loginForm').classList.contains('hidden')) {
+                    // In game, check if answer input is focused
+                    if (document.getElementById('answerInput') && document.activeElement === document.getElementById('answerInput')) {
+                        submitAnswer();
+                    }
+                } else {
+                    // On login screen
+                    handleAuth();
+                }
+            }
+        });
+        
+        // Add click event listener as backup for submit button
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Firebase
+            initializeFirebase();
+            
+            // Initialize Stripe
+            initializeStripe();
+            
+            var submitBtn = document.querySelector('button[onclick="submitAnswer()"]');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', function(e) {
+                    // If button is disabled, try to re-enable it
+                    if (this.disabled) {
+                        console.log('Submit button was disabled, attempting to re-enable');
+                        this.disabled = false;
+                        this.innerHTML = 'Submit Answer';
+                        this.style.backgroundColor = '';
+                        this.style.cursor = '';
+                        document.getElementById('answerInput').disabled = false;
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
