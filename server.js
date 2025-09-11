@@ -30,7 +30,7 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'", "https://js.stripe.com", "https://cdn.socket.io", "https://www.gstatic.com"],
-            scriptSrcAttr: ["'unsafe-hashes'"],
+            scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:"],
             connectSrc: ["'self'", "https://api.stripe.com", "wss:", "ws:", "https://*.firebaseapp.com", "https://*.googleapis.com"],

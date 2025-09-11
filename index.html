@@ -476,7 +476,7 @@
                 socket.disconnect();
             }
             
-            socket = io('http://localhost:3000', {
+            socket = io(window.location.origin, {
                 transports: ['websocket'],
                 timeout: 20000,
                 forceNew: true
