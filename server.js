@@ -368,10 +368,27 @@ io.on('connection', (socket) => {
     // Create room
     socket.on('create_room', (data) => {
         const roomId = 'room_' + Date.now();
+        const player = players.get(socket.id);
+        const entryFeeCents = (data.entryFee || 10) * 100; // Convert to cents
+        
+        // Check if player has enough balance
+        const currentBalance = userBalances.get(player.userId) || 0;
+        if (currentBalance < entryFeeCents) {
+            socket.emit('error', { 
+                message: `Insufficient balance. Need $${(data.entryFee || 10).toFixed(2)} to create room. Current balance: $${(currentBalance/100).toFixed(2)}` 
+            });
+            return;
+        }
+        
+        // Deduct entry fee from player balance
+        const newBalance = currentBalance - entryFeeCents;
+        userBalances.set(player.userId, newBalance);
+        
         const room = {
             id: roomId,
             name: data.roomName || 'Game Room',
             entryFee: data.entryFee || 10,
+            prizePool: data.entryFee || 10, // Initialize prize pool with entry fee
             hostId: socket.id,
             hostName: players.get(socket.id).name,
             players: [socket.id],
@@ -390,8 +407,14 @@ io.on('connection', (socket) => {
         socket.join(roomId);
         players.get(socket.id).roomId = roomId;
         
+        // Notify player of balance update
+        socket.emit('balance_updated', { 
+            newBalance: newBalance / 100, 
+            message: `Entry fee of $${(entryFeeCents/100).toFixed(2)} deducted for room creation` 
+        });
+        
         socket.emit('room_created', { roomId, room });
-        console.log('Room created:', roomId, 'by', players.get(socket.id).name);
+        console.log('Room created:', roomId, 'by', players.get(socket.id).name, 'Prize pool:', room.prizePool);
     });
     
     // Join room
@@ -434,6 +457,9 @@ io.on('connection', (socket) => {
         // Deduct entry fee
         const newBalance = currentBalance - entryFeeCents;
         userBalances.set(player.userId, newBalance);
+        
+        // Add entry fee to prize pool
+        room.prizePool += room.entryFee;
         
         room.players.push(socket.id);
         room.playerNames.push(player.name);
