@@ -513,7 +513,7 @@
             score: 0,
             timeLeft: 30,
             round: 1,
-            balance: 1000,
+            balance: 0, // Will be loaded from server
             playerName: 'Player' + Math.floor(Math.random() * 1000), // Generate random player name
             currentEntryFee: 0
         };
@@ -737,6 +737,7 @@
             // Handle balance updates
             socket.on('balance_updated', function(data) {
                 document.getElementById('balance').textContent = data.newBalance.toFixed(2);
+                gameState.balance = data.newBalance; // Update game state
                 showMessage(data.message, 'info');
             });
             
@@ -747,6 +748,7 @@
                     const userPayout = results.payoutResults.payouts.find(p => p.playerId === currentUser.uid);
                     if (userPayout && userPayout.status === 'success') {
                         document.getElementById('balance').textContent = userPayout.newBalance.toFixed(2);
+                        gameState.balance = userPayout.newBalance; // Update game state
                         showMessage(`🎉 You won $${userPayout.amount.toFixed(2)}! New balance: $${userPayout.newBalance.toFixed(2)}`, 'success');
                     }
                 }
@@ -1093,9 +1095,11 @@
                     const response = await fetch(`/api/user-balance/${currentUser.uid}`);
                     const data = await response.json();
                     document.getElementById('balance').textContent = data.balance.toFixed(2);
+                    gameState.balance = data.balance; // Update game state
                 } catch (error) {
                     console.error('Error loading balance:', error);
                     document.getElementById('balance').textContent = '0.00';
+                    gameState.balance = 0;
                 }
             }
         }
