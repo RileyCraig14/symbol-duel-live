@@ -1308,6 +1308,7 @@
             var entryFee = parseInt(document.getElementById('entryFee').value);
             
             console.log('Creating room:', roomName, 'Entry fee:', entryFee, 'Balance:', gameState.balance);
+            console.log('Socket connected:', isConnected, 'Socket object:', socket);
             
             if (!roomName || !entryFee) {
                 showMessage('Please enter room name and entry fee', 'error');
@@ -1336,6 +1337,18 @@
             socket.emit('create_room', {
                 roomName: roomName,
                 entryFee: entryFee
+            });
+            
+            // Listen for room_created response
+            socket.once('room_created', function(data) {
+                console.log('Room created successfully:', data);
+                showGameRoom(data.room);
+            });
+            
+            // Listen for errors
+            socket.once('error', function(error) {
+                console.error('Room creation error:', error);
+                showMessage(error.message || 'Failed to create room', 'error');
             });
         }
         
