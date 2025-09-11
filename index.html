@@ -412,7 +412,7 @@
                 </div>
                 <div class="form-group">
                     <label for="entryFee">Entry Fee ($):</label>
-                    <input type="number" id="entryFee" placeholder="10" value="10" min="1" max="100">
+                    <input type="number" id="entryFee" placeholder="10" value="10" min="1" max="200">
                 </div>
                 <div class="game-buttons">
                     <button class="game-btn primary" onclick="createRoom()">Create Room</button>
@@ -1307,19 +1307,21 @@
             var roomName = document.getElementById('roomName').value.trim();
             var entryFee = parseInt(document.getElementById('entryFee').value);
             
+            console.log('Creating room:', roomName, 'Entry fee:', entryFee, 'Balance:', gameState.balance);
+            
             if (!roomName || !entryFee) {
                 showMessage('Please enter room name and entry fee', 'error');
                 return;
             }
             
-            if (entryFee < 1 || entryFee > 100) {
-                showMessage('Entry fee must be between $1 and $100', 'error');
+            if (entryFee < 1 || entryFee > 200) {
+                showMessage('Entry fee must be between $1 and $200', 'error');
                 return;
             }
             
             // Check if player has enough balance
             if (gameState.balance < entryFee) {
-                showMessage('Insufficient balance. Please add funds.', 'error');
+                showMessage(`Insufficient balance. Need $${entryFee}, have $${gameState.balance.toFixed(2)}`, 'error');
                 return;
             }
             
