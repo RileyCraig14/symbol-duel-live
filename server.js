@@ -29,10 +29,10 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'", "https://js.stripe.com", "https://cdn.socket.io"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'", "https://js.stripe.com", "https://cdn.socket.io", "https://www.gstatic.com"],
             styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "https://api.stripe.com", "wss:", "ws:"],
+            connectSrc: ["'self'", "https://api.stripe.com", "wss:", "ws:", "https://*.firebaseapp.com", "https://*.googleapis.com"],
             fontSrc: ["'self'"],
             objectSrc: ["'none'"],
             mediaSrc: ["'self'"],
