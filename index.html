@@ -412,7 +412,15 @@
                 </div>
                 <div class="form-group">
                     <label for="entryFee">Entry Fee ($):</label>
-                    <input type="number" id="entryFee" placeholder="10" value="10" min="1" max="200">
+                    <input type="number" id="entryFee" placeholder="10" value="10" min="1" max="200" 
+                           oninput="validateEntryFee()" onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                           style="width: 100%; padding: 10px; font-size: 16px; border: 2px solid #333; border-radius: 5px;">
+                    <div id="entryFeeError" style="color: #ff6b6b; font-size: 12px; margin-top: 5px; display: none;">
+                        Entry fee must be between $1 and $200
+                    </div>
+                    <div style="color: #ccc; font-size: 11px; margin-top: 2px;">
+                        Maximum: $200
+                    </div>
                 </div>
                 <div class="game-buttons">
                     <button class="game-btn primary" onclick="createRoom()">Create Room</button>
@@ -857,7 +865,7 @@
                         console.log('Add balance response:', balanceData);
                         if (balanceData.success) {
                             showMessage('Payment successful! Balance added to your account!', 'success');
-                            return true;
+                    return true;
                         } else {
                             console.error('Failed to add balance:', balanceData);
                             showMessage('Payment succeeded but failed to add balance', 'error');
@@ -993,7 +1001,7 @@
                 }
                 
                 showMessage(errorMessage, 'error');
-            }
+        }
         }
         
         function logout() {
@@ -1164,6 +1172,22 @@
             document.getElementById('createRoom').classList.remove('hidden');
         }
         
+        function validateEntryFee() {
+            const entryFeeInput = document.getElementById('entryFee');
+            const errorDiv = document.getElementById('entryFeeError');
+            const value = parseFloat(entryFeeInput.value);
+            
+            if (isNaN(value) || value < 1 || value > 200) {
+                entryFeeInput.style.borderColor = '#ff6b6b';
+                errorDiv.style.display = 'block';
+                return false;
+            } else {
+                entryFeeInput.style.borderColor = '';
+                errorDiv.style.display = 'none';
+                return true;
+            }
+        }
+        
         function showJoinRoom() {
             hideAllScreens();
             document.getElementById('joinRoom').classList.remove('hidden');
@@ -1251,9 +1275,9 @@
                     console.log('Add balance response:', data);
                     
                     if (data.success) {
-                        showMessage(`Successfully added $${amount} to your account!`, 'success');
+                showMessage(`Successfully added $${amount} to your account!`, 'success');
                         loadUserBalance(); // Refresh balance display
-                        showGameMenu();
+                showGameMenu();
                     } else {
                         showMessage('Failed to add funds', 'error');
                     }
@@ -1373,7 +1397,8 @@
                 return;
             }
             
-            if (entryFee < 1 || entryFee > 200) {
+            // Validate entry fee with visual feedback
+            if (!validateEntryFee()) {
                 showMessage('Entry fee must be between $1 and $200', 'error');
                 return;
             }
