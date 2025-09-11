@@ -1223,11 +1223,37 @@
                 return;
             }
             
-            const success = await processPayment(amount, 'add-funds');
-            if (success) {
-                showMessage(`Successfully added $${amount} to your account!`, 'success');
-                loadUserBalance(); // Refresh balance display
-                showGameMenu();
+            // For testing: Add fake funds directly to server
+            if (currentUser && currentUser.uid) {
+                try {
+                    console.log('Adding fake funds to server:', currentUser.uid, 'amount:', amount * 100);
+                    const response = await fetch('/api/add-balance', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            userId: currentUser.uid,
+                            amount: amount * 100 // Convert to cents
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    console.log('Add balance response:', data);
+                    
+                    if (data.success) {
+                        showMessage(`Successfully added $${amount} to your account!`, 'success');
+                        loadUserBalance(); // Refresh balance display
+                        showGameMenu();
+                    } else {
+                        showMessage('Failed to add funds', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error adding funds:', error);
+                    showMessage('Failed to add funds', 'error');
+                }
+            } else {
+                showMessage('User not authenticated', 'error');
             }
         }
         
