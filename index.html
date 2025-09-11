@@ -556,6 +556,7 @@
                 // Send user ID to server for balance tracking
                 if (currentUser && currentUser.uid) {
                     socket.emit('set_user_id', { userId: currentUser.uid });
+                    console.log('Sent user ID to server:', currentUser.uid);
                 }
                 
                 // Send heartbeat every 30 seconds to keep connection alive
@@ -1087,6 +1088,12 @@
             document.getElementById('gameArea').classList.remove('hidden');
             initializeSocket();
             loadUserBalance();
+            
+            // Send user ID to server after authentication
+            if (currentUser && currentUser.uid && socket) {
+                socket.emit('set_user_id', { userId: currentUser.uid });
+                console.log('Sent user ID to server after auth:', currentUser.uid);
+            }
         }
         
         async function loadUserBalance() {

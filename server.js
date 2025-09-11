@@ -348,6 +348,7 @@ io.on('connection', (socket) => {
         if (data.userId) {
             players.get(socket.id).userId = data.userId;
             console.log('User ID set for player:', players.get(socket.id).name, 'ID:', data.userId);
+            console.log('Current balance for user:', userBalances.get(data.userId) || 0);
         }
     });
     
@@ -420,6 +421,8 @@ io.on('connection', (socket) => {
         const player = players.get(socket.id);
         const entryFeeCents = room.entryFee * 100; // Convert to cents
         const currentBalance = userBalances.get(player.userId) || 0;
+        
+        console.log('Join room check - Player:', player.name, 'UserID:', player.userId, 'Balance:', currentBalance, 'Entry fee:', entryFeeCents);
         
         if (currentBalance < entryFeeCents) {
             socket.emit('error', { 
