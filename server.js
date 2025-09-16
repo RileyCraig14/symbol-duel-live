@@ -349,7 +349,7 @@ io.on('connection', (socket) => {
             const player = players.get(socket.id);
             if (player) {
                 player.userId = data.userId;
-                console.log('User ID set for player:', player.name, 'ID:', data.userId);
+                console.log('User ID set for player:', player.name, 'Socket ID:', socket.id, 'User ID:', data.userId);
                 console.log('Current balance for user:', userBalances.get(data.userId) || 0);
             } else {
                 console.log('ERROR: Player not found for socket:', socket.id);
@@ -526,6 +526,8 @@ io.on('connection', (socket) => {
     
     // Submit answer
     socket.on('submit_answer', (data, callback) => {
+        console.log('Answer submitted - Socket ID:', socket.id, 'Answer:', data.answer, 'Room:', data.roomId);
+        
         const room = rooms.get(data.roomId);
         if (!room || room.status !== 'playing') {
             const error = { message: 'Game is not active' };
@@ -871,9 +873,9 @@ function endGame(room) {
     io.to(room.id).emit('game_ended', results);
     console.log('Game ended. Winner:', playerRankings[0].playerName, 'Amount:', payoutResults.payouts[0]?.amount?.toFixed(2) || 0);
     
-    // Reset room for next game after 10 seconds
+    // Remove room from lobby after game ends (no longer available to join)
     setTimeout(() => {
-        resetRoomForNextGame(room);
+        removeFinishedRoom(room);
     }, 10000);
 }
 

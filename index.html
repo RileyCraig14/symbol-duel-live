@@ -553,7 +553,7 @@
             
             // Connection events
             socket.on('connect', function() {
-                console.log('Connected to game server');
+                console.log('Connected to game server - Tab:', TAB_ID, 'Socket ID:', socket.id);
                 isConnected = true;
                 showMessage('Connected to game server', 'success');
                 
@@ -1135,7 +1135,7 @@
             // Send user ID to server after authentication
             if (currentUser && currentUser.uid && socket) {
                 socket.emit('set_user_id', { userId: currentUser.uid });
-                console.log('Sent user ID to server after auth:', currentUser.uid);
+                console.log('Sent user ID to server after auth - Tab:', TAB_ID, 'User ID:', currentUser.uid, 'Socket ID:', socket.id);
             }
         }
         
@@ -1427,6 +1427,8 @@
                 return;
             }
             
+            console.log('Creating room - Tab:', TAB_ID, 'User ID:', currentUser.uid, 'Socket ID:', socket.id, 'Room:', roomName, 'Entry Fee:', entryFee);
+            
             socket.emit('create_room', {
                 roomName: roomName,
                 entryFee: entryFee
@@ -1466,6 +1468,8 @@
                 // Store entry fee for this game
                 gameState.currentEntryFee = entryFee;
             }
+            
+            console.log('Joining room - Tab:', TAB_ID, 'User ID:', currentUser.uid, 'Socket ID:', socket.id, 'Room ID:', roomId);
             
             socket.emit('join_room', {
                 roomId: roomId
