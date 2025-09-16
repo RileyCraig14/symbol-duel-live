@@ -514,7 +514,11 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     
     <script>
-        // Game state
+        // Create unique tab ID to prevent cross-tab interference
+        const TAB_ID = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        console.log('Tab ID:', TAB_ID);
+        
+        // Game state - make it unique to this tab
         var gameState = {
             currentRoom: null,
             gamePhase: 'menu',
@@ -523,7 +527,8 @@
             round: 1,
             balance: 0, // Will be loaded from server
             playerName: 'Player' + Math.floor(Math.random() * 1000), // Generate random player name
-            currentEntryFee: 0
+            currentEntryFee: 0,
+            tabId: TAB_ID // Add tab ID to prevent cross-tab issues
         };
         
         // Socket.IO connection
@@ -543,6 +548,8 @@
                 timeout: 20000,
                 forceNew: true
             });
+            
+            console.log('Socket created for tab:', TAB_ID, 'Socket ID:', socket.id);
             
             // Connection events
             socket.on('connect', function() {
@@ -1664,7 +1671,7 @@
                 return;
             }
             
-            console.log('Submitting answer:', answer, 'for room:', gameState.currentRoom);
+            console.log('Submitting answer from tab:', TAB_ID, 'Answer:', answer, 'for room:', gameState.currentRoom);
             
             // Get submit button and input elements
             var submitBtn = document.querySelector('button[onclick="submitAnswer()"]');
