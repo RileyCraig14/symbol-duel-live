@@ -763,22 +763,25 @@
             socket.on('game_ended', function(results) {
                 console.log('Game ended with results:', results);
                 
-                // Update balance if user won
-                if (results.payoutResults && results.payoutResults.payouts) {
-                    const userPayout = results.payoutResults.payouts.find(p => p.userId === currentUser.uid);
-                    if (userPayout && userPayout.status === 'success') {
-                        document.getElementById('balance').textContent = userPayout.newBalance.toFixed(2);
-                        gameState.balance = userPayout.newBalance; // Update game state
-                        showMessage(`🎉 You won $${userPayout.amount.toFixed(2)}! New balance: $${userPayout.newBalance.toFixed(2)}`, 'success');
-                    } else if (userPayout && userPayout.status === 'error') {
-                        showMessage(`❌ Payout error: ${userPayout.error}`, 'error');
-                    } else {
-                        // User didn't win
-                        showMessage(`Better luck next time! The winner was ${results.winner}`, 'info');
-                    }
+            // Update balance if user won
+            if (results.payoutResults && results.payoutResults.payouts) {
+                const userPayout = results.payoutResults.payouts.find(p => p.userId === currentUser.uid);
+                console.log('Looking for payout for user:', currentUser.uid);
+                console.log('Available payouts:', results.payoutResults.payouts);
+                
+                if (userPayout && userPayout.status === 'success') {
+                    document.getElementById('balance').textContent = userPayout.newBalance.toFixed(2);
+                    gameState.balance = userPayout.newBalance; // Update game state
+                    showMessage(`🎉 You won $${userPayout.amount.toFixed(2)}! New balance: $${userPayout.newBalance.toFixed(2)}`, 'success');
+                } else if (userPayout && userPayout.status === 'error') {
+                    showMessage(`❌ Payout error: ${userPayout.error}`, 'error');
                 } else {
-                    console.log('No payout results found');
+                    // User didn't win
+                    showMessage(`Better luck next time! The winner was ${results.winner}`, 'info');
                 }
+            } else {
+                console.log('No payout results found');
+            }
                 
                 // Show game results
                 showGameResults(results);
