@@ -117,7 +117,7 @@ try {
 } catch (error) {
     console.error('❌ Error loading puzzles:', error);
     puzzles = [
-        { symbols: '🎵 + 🏠', answer: 'music house', alternatives: ['musichouse', 'music house'], difficulty: 'easy', points: 10 },
+        { symbols: '🎵 + 🏠', answer: 'music house', alternatives: ['musichouse', 'music house', 'house music', 'housemusic'], difficulty: 'easy', points: 10 },
         { symbols: '☀️ + 🌊', answer: 'sun water', alternatives: ['sunwater', 'sun water'], difficulty: 'easy', points: 10 },
         { symbols: '🚗 + 🏠', answer: 'car house', alternatives: ['carhouse', 'car house', 'garage'], difficulty: 'easy', points: 10 }
     ];
@@ -167,6 +167,24 @@ class GameManager {
             return null;
         }
 
+        // DEDUCT ENTRY FEE FROM PLAYER BALANCE
+        const player = this.players.get(playerId);
+        if (player && player.userId) {
+            const currentBalance = this.userBalances.get(player.userId) || 0;
+            const entryFeeCents = room.entryFee * 100;
+            
+            if (currentBalance < entryFeeCents) {
+                console.log(`❌ Insufficient balance: ${playerName} has $${(currentBalance/100).toFixed(2)}, needs $${room.entryFee}`);
+                return null; // Insufficient funds
+            }
+            
+            // Deduct entry fee
+            const newBalance = currentBalance - entryFeeCents;
+            this.userBalances.set(player.userId, newBalance);
+            
+            console.log(`💰 Entry fee deducted: ${playerName} paid $${room.entryFee}, new balance: $${(newBalance/100).toFixed(2)}`);
+        }
+
         room.players.push(playerId);
         room.playerNames.push(playerName);
         room.scores[playerId] = 0;
@@ -178,11 +196,18 @@ class GameManager {
     startGame(roomId) {
         const room = this.rooms.get(roomId);
         if (!room || room.players.length < 2) return null;
-
+        
         room.status = 'playing';
         room.gameStarted = true;
         room.currentRound = 1;
         room.answers = {};
+        room.questionStartTime = Date.now();
+        room.timeLimit = 30000; // 30 seconds in milliseconds
+        
+        // START FIRST QUESTION IMMEDIATELY
+        const difficultyPuzzles = this.getPuzzleByDifficulty(room.currentRound);
+        const puzzle = difficultyPuzzles[Math.floor(Math.random() * difficultyPuzzles.length)];
+        room.currentPuzzle = puzzle;
 
         return room;
     }
@@ -199,26 +224,57 @@ class GameManager {
 
     submitAnswer(roomId, playerId, answer) {
         const room = this.rooms.get(roomId);
-        if (!room || room.status !== 'playing') return null;
+        if (!room || room.status !== 'playing') {
+            console.log('❌ Cannot submit answer - room not found or not playing:', { roomId, playerId, answer, roomStatus: room?.status });
+            return null;
+        }
+
+        // Check if time has expired
+        const timeElapsed = Date.now() - room.questionStartTime;
+        const timeRemaining = room.timeLimit - timeElapsed;
+        
+        if (timeRemaining <= 0) {
+            console.log('⏰ Answer submitted after time expired');
+            return {
+                correct: false,
+                points: 0,
+                attempts: 0,
+                correctAnswer: room.currentPuzzle.answer,
+                timeExpired: true
+            };
+        }
 
         const playerName = this.players.get(playerId)?.name || 'Unknown';
         const isCorrect = room.currentPuzzle?.alternatives.includes(answer.toLowerCase());
+        
+        console.log('📝 Answer submission:', {
+            roomId,
+            playerId,
+            playerName,
+            answer,
+            correctAnswer: room.currentPuzzle?.answer,
+            alternatives: room.currentPuzzle?.alternatives,
+            isCorrect,
+            timeRemaining: Math.ceil(timeRemaining / 1000)
+        });
 
         if (!room.answers[playerId]) {
             room.answers[playerId] = {
                 attempts: [],
                 correct: false,
                 points: 0,
-                playerName: playerName
+                playerName: playerName,
+                responseTime: timeRemaining
             };
         }
-
+        
         room.answers[playerId].attempts.push({
             answer: answer,
             correct: isCorrect,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            responseTime: timeRemaining
         });
-
+        
         if (isCorrect && !room.answers[playerId].correct) {
             room.answers[playerId].correct = true;
             room.answers[playerId].points = room.currentPuzzle.points;
@@ -226,10 +282,11 @@ class GameManager {
         }
 
         return {
-            correct: isCorrect,
+            correct: isCorrect, 
             points: isCorrect ? room.currentPuzzle.points : 0,
             attempts: room.answers[playerId].attempts.length,
-            correctAnswer: room.currentPuzzle.answer
+            correctAnswer: room.currentPuzzle.answer,
+            timeRemaining: Math.ceil(timeRemaining / 1000)
         };
     }
 
@@ -242,6 +299,13 @@ class GameManager {
         if (room.currentRound > room.totalRounds) {
             return this.endGame(roomId);
         }
+
+        // Start next round with new question
+        const difficultyPuzzles = this.getPuzzleByDifficulty(room.currentRound);
+        const puzzle = difficultyPuzzles[Math.floor(Math.random() * difficultyPuzzles.length)];
+        room.currentPuzzle = puzzle;
+        room.questionStartTime = Date.now();
+        room.answers = {}; // Reset answers for new round
 
         return room;
     }
@@ -262,11 +326,55 @@ class GameManager {
         // Calculate payouts
         const payoutStructure = this.calculatePayouts(room.prizePool, room.players.length);
         
+        // DISTRIBUTE PAYOUTS TO USER BALANCES
+        const payoutResults = [];
+        rankings.forEach((player, index) => {
+            const position = index + 1;
+            const payoutAmount = payoutStructure.payouts[position] || 0;
+            
+            if (payoutAmount > 0) {
+                // Get player's Firebase userId
+                const playerObj = this.players.get(player.playerId);
+                if (playerObj && playerObj.userId) {
+                    const currentBalance = this.userBalances.get(playerObj.userId) || 0;
+                    const newBalance = currentBalance + (payoutAmount * 100); // Convert dollars to cents
+                    this.userBalances.set(playerObj.userId, newBalance);
+                    
+                    console.log(`💰 Payout distributed: ${player.playerName} (${playerObj.userId}) -> $${payoutAmount} (Position: ${position})`);
+                    
+                    // Store payout for Firebase update
+                    payoutResults.push({
+                        playerId: player.playerId,
+                        playerName: player.playerName,
+                        position: position,
+                        score: player.score,
+                        payout: payoutAmount,
+                        userId: playerObj.userId,
+                        newBalance: newBalance,
+                        balanceChange: payoutAmount * 100
+                    });
+                }
+            } else {
+                payoutResults.push({
+                    playerId: player.playerId,
+                    playerName: player.playerName,
+                    position: position,
+                    score: player.score,
+                    payout: 0,
+                    userId: this.players.get(player.playerId)?.userId,
+                    newBalance: this.userBalances.get(this.players.get(player.playerId)?.userId) || 0,
+                    balanceChange: 0
+                });
+            }
+        });
+        
         const results = {
             winner: rankings[0].playerName,
             finalScores: room.scores,
             rankings: rankings,
             payoutStructure: payoutStructure,
+            payoutResults: payoutResults, // Add this for frontend
+            payouts: payoutStructure.payouts, // Add this for frontend compatibility
             totalPot: payoutStructure.totalPot,
             houseTake: payoutStructure.houseTake,
             playerPot: payoutStructure.playerPot
@@ -274,6 +382,26 @@ class GameManager {
 
         // Update leaderboard
         this.updateLeaderboard(rankings, room.entryFee);
+        
+        // SEND BALANCE UPDATES TO ALL PLAYERS
+        payoutResults.forEach(payout => {
+            if (payout.userId) {
+                const playerSocket = Array.from(io.sockets.sockets.values())
+                    .find(s => s.playerId === payout.playerId);
+                if (playerSocket) {
+                    const newBalance = this.userBalances.get(payout.userId) || 0;
+                    playerSocket.emit('balance_updated', { 
+                        balance: newBalance,
+                        change: payout.balanceChange,
+                        payout: payout.payout,
+                        position: payout.position
+                    });
+                    
+                    // Store balance for Firebase sync (would be implemented with Firebase Admin SDK)
+                    console.log(`💰 Balance update sent to ${payout.playerName}: $${(newBalance/100).toFixed(2)} (${payout.payout > 0 ? '+' : ''}$${payout.payout.toFixed(2)})`);
+                }
+            }
+        });
 
         return results;
     }
@@ -349,6 +477,13 @@ class GameManager {
             this.leaderboard.set(playerName, stats);
         });
     }
+    
+    removeFinishedRoom(roomId) {
+        if (this.rooms.has(roomId)) {
+            this.rooms.delete(roomId);
+            console.log(`🗑️ Removed finished room: ${roomId}`);
+        }
+    }
 
     getAvailableRooms() {
         return Array.from(this.rooms.values())
@@ -373,21 +508,21 @@ class GameManager {
         if (!player || !player.roomId) return;
 
         const room = this.rooms.get(player.roomId);
-        if (room) {
+            if (room) {
             const playerIndex = room.players.indexOf(playerId);
-            if (playerIndex > -1) {
-                room.players.splice(playerIndex, 1);
-                room.playerNames.splice(playerIndex, 1);
+                if (playerIndex > -1) {
+                    room.players.splice(playerIndex, 1);
+                    room.playerNames.splice(playerIndex, 1);
                 delete room.scores[playerId];
                 delete room.answers[playerId];
                 room.prizePool -= (room.entryFee * 100);
-            }
-
+                }
+                
             if (room.hostId === playerId) {
-                if (room.players.length > 0) {
-                    room.hostId = room.players[0];
-                    room.hostName = room.playerNames[0];
-                } else {
+                    if (room.players.length > 0) {
+                        room.hostId = room.players[0];
+                        room.hostName = room.playerNames[0];
+                    } else {
                     this.rooms.delete(player.roomId);
                 }
             }
@@ -485,7 +620,58 @@ io.on('connection', (socket) => {
         }
 
         io.to(data.roomId).emit('game_started', room);
-        console.log(`🎮 Game started in room: ${data.roomId}`);
+        
+        // IMMEDIATELY SEND FIRST QUESTION WITH SERVER TIMER
+        io.to(data.roomId).emit('question_updated', {
+            ...room.currentPuzzle,
+            round: room.currentRound,
+            timeLimit: 30,
+            startTime: room.questionStartTime
+        });
+        
+        // Start server-side timer
+        setTimeout(() => {
+            const currentRoom = gameManager.rooms.get(data.roomId);
+            if (currentRoom && currentRoom.status === 'playing') {
+                const nextRoom = gameManager.endRound(data.roomId);
+                if (nextRoom) {
+                    if (nextRoom.currentRound > nextRoom.totalRounds) {
+                        const results = gameManager.endGame(data.roomId);
+                        io.to(data.roomId).emit('game_ended', results);
+                        
+                        // CLEAN UP ROOM AFTER 10 SECONDS
+                        setTimeout(() => {
+                            gameManager.removeFinishedRoom(data.roomId);
+                            io.emit('rooms_list', gameManager.getAvailableRooms());
+                        }, 10000);
+                    } else {
+                        // Send next question
+                        io.to(data.roomId).emit('question_updated', {
+                            ...nextRoom.currentPuzzle,
+                            round: nextRoom.currentRound,
+                            timeLimit: 30,
+                            startTime: nextRoom.questionStartTime
+                        });
+                        
+                        // Start timer for next question
+                        setTimeout(() => {
+                            const finalRoom = gameManager.endRound(data.roomId);
+                            if (finalRoom && finalRoom.currentRound > finalRoom.totalRounds) {
+                                const results = gameManager.endGame(data.roomId);
+                                io.to(data.roomId).emit('game_ended', results);
+                                
+                                setTimeout(() => {
+                                    gameManager.removeFinishedRoom(data.roomId);
+                                    io.emit('rooms_list', gameManager.getAvailableRooms());
+                                }, 10000);
+                            }
+                        }, 30000); // 30 seconds for each question
+                    }
+                }
+            }
+        }, 30000); // 30 seconds for first question
+        
+        console.log(`🎮 Game started in room: ${data.roomId} with question: ${room.currentPuzzle.symbols}`);
     });
 
     // Submit answer
@@ -506,28 +692,10 @@ io.on('connection', (socket) => {
         console.log(`📝 Answer submitted: ${socket.id} -> ${data.answer} (${result.correct ? 'correct' : 'incorrect'})`);
     });
 
-    // Time up
+    // Time up (now handled by server-side timers)
     socket.on('time_up', (data) => {
-        const room = gameManager.endRound(data.roomId);
-        if (room) {
-            if (room.currentRound > room.totalRounds) {
-                const results = gameManager.endGame(data.roomId);
-                io.to(data.roomId).emit('game_ended', results);
-            } else {
-                // Start next round
-                setTimeout(() => {
-                    const difficultyPuzzles = gameManager.getPuzzleByDifficulty(room.currentRound);
-                    const puzzle = difficultyPuzzles[Math.floor(Math.random() * difficultyPuzzles.length)];
-                    room.currentPuzzle = puzzle;
-                    
-                    io.to(data.roomId).emit('question_updated', {
-                        ...puzzle,
-                        round: room.currentRound,
-                        timeLimit: 30
-                    });
-                }, 3000);
-            }
-        }
+        console.log(`⏰ Client reported time up for room ${data.roomId} - server timer will handle this`);
+        // Server-side timers now handle this automatically
     });
 
     // Get rooms
