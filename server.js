@@ -257,10 +257,11 @@ const PAYOUT_CONFIG = {
 };
 
 // Proven tournament payout calculation (based on FanDuel/DraftKings models)
-function calculateTournamentPayouts(entryFee, playerCount) {
-    const totalPot = entryFee * playerCount;
-    const houseTake = totalPot * PAYOUT_CONFIG.HOUSE_EDGE;
-    const playerPot = totalPot * PAYOUT_CONFIG.PLAYER_PAYOUT;
+function calculateTournamentPayouts(prizePool, playerCount) {
+    const houseTake = prizePool * PAYOUT_CONFIG.HOUSE_EDGE;
+    const playerPot = prizePool * PAYOUT_CONFIG.PLAYER_PAYOUT;
+    
+    console.log('Payout calculation - Prize Pool:', prizePool, 'Player Count:', playerCount, 'Player Pot:', playerPot);
     
     // Tournament payout structure (proven from successful platforms)
     const payouts = {};
@@ -755,8 +756,8 @@ function endGame(room) {
         player.position = index + 1;
     });
     
-    // Calculate tournament payouts using proven structure
-    const payoutStructure = calculateTournamentPayouts(room.entryFee, room.players.length);
+    // Calculate tournament payouts using actual prize pool
+    const payoutStructure = calculateTournamentPayouts(room.prizePool, room.players.length);
     
     // Process payouts
     const payoutResults = {
