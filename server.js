@@ -17,11 +17,11 @@ const server = http.createServer(app);
 // Socket.IO with modern configuration
 const io = socketIo(server, {
     cors: {
-        origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV === 'production' ? false : "*"),
+        origin: "*", // Allow all origins for Render deployment
         methods: ["GET", "POST"],
         credentials: true
     },
-    transports: ['websocket'],
+    transports: ['websocket', 'polling'], // Add polling as fallback
     pingTimeout: 60000,
     pingInterval: 25000
 });
@@ -45,7 +45,7 @@ app.use(helmet({
 
 // CORS configuration
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV === 'production' ? false : true),
+    origin: "*", // Allow all origins for Render deployment
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -80,6 +80,22 @@ app.use(validateInput);
 
 // Static files
 app.use(express.static(path.join(__dirname)));
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        puzzles: puzzles.length,
+        rooms: gameManager.rooms.size,
+        players: gameManager.players.size
+    });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Load puzzles
 let puzzles = [];
