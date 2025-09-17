@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Symbol Duel - Modern Multiplayer Trivia</title>
+    
+    <!-- Modern CSS Framework -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCRovI9X-IWPYVtJAauHsvvE0XhHkJ8NEA",
+            authDomain: "symbol-duel.firebaseapp.com",
+            projectId: "symbol-duel",
+            storageBucket: "symbol-duel.firebasestorage.app",
+            messagingSenderId: "115651908526",
+            appId: "1:115651908526:web:d0425e58de0991a38fee3f",
+            measurementId: "G-BNTRQY9YVY"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // Make Firebase available globally
+        window.firebase = { auth, db, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, doc, getDoc, setDoc, updateDoc, increment };
+    </script>
+    
+    <style>
+        /* Custom animations and modern styling */
+        @keyframes slideInUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% { transform: translate3d(0,0,0); }
+            40%, 43% { transform: translate3d(0,-30px,0); }
+            70% { transform: translate3d(0,-15px,0); }
+            90% { transform: translate3d(0,-4px,0); }
+        }
+        
+        .slide-in-up { animation: slideInUp 0.5s ease-out; }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        .pulse-animation { animation: pulse 2s infinite; }
+        .bounce-animation { animation: bounce 1s; }
+        
+        /* Custom gradient backgrounds */
+        .bg-gradient-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .bg-gradient-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .bg-gradient-danger { background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%); }
+        .bg-gradient-warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        
+        /* Glass morphism effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+        
+        /* Responsive text sizing */
+        .text-responsive { font-size: clamp(1rem, 4vw, 1.5rem); }
+        .text-responsive-lg { font-size: clamp(1.5rem, 6vw, 3rem); }
+        
+        /* Loading spinner */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Mobile-first responsive design */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .btn { padding: 0.75rem 1rem; font-size: 0.9rem; }
+            .card { margin: 0.5rem 0; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-primary min-h-screen text-white">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-gradient-primary flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="spinner mx-auto mb-4"></div>
+            <h2 class="text-2xl font-bold mb-2">Loading Symbol Duel...</h2>
+            <p class="text-gray-300">Preparing your gaming experience</p>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app" class="min-h-screen hidden">
+        <!-- Header -->
+        <header class="bg-black bg-opacity-20 backdrop-blur-sm border-b border-white border-opacity-20">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-success rounded-full flex items-center justify-center">
+                            <i class="fas fa-brain text-white text-lg"></i>
+                        </div>
+                        <h1 class="text-2xl font-bold">Symbol Duel</h1>
+                    </div>
+                    <div id="userInfo" class="hidden">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-right">
+                                <div class="text-sm text-gray-300">Balance</div>
+                                <div id="userBalance" class="text-lg font-bold text-green-400">$0.00</div>
+                            </div>
+                            <button id="logoutBtn" class="btn bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8">
+            <!-- Login Screen -->
+            <div id="loginScreen" class="max-w-md mx-auto">
+                <div class="glass rounded-2xl p-8 slide-in-up">
+                    <div class="text-center mb-8">
+                        <div class="w-20 h-20 bg-gradient-success rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-puzzle-piece text-white text-3xl"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold mb-2">Welcome to Symbol Duel</h2>
+                        <p class="text-gray-300">Multiplayer rebus puzzle battles</p>
+                    </div>
+                    
+                    <form id="loginForm" class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Email</label>
+                            <input type="email" id="email" required 
+                                   class="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Enter your email">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Password</label>
+                            <input type="password" id="password" required 
+                                   class="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Enter your password">
+                        </div>
+                        
+                        <button type="submit" class="w-full btn bg-gradient-success hover:opacity-90 py-3 rounded-lg font-semibold">
+                            <i class="fas fa-play mr-2"></i>Enter Game
+                        </button>
+                        
+                        <p class="text-center text-sm text-gray-300">
+                            New users will be automatically registered
+                        </p>
+                    </form>
+                    
+                    <div id="loginMessage" class="mt-4 hidden"></div>
+                </div>
+            </div>
+
+            <!-- Game Dashboard -->
+            <div id="gameDashboard" class="hidden">
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="glass rounded-xl p-6 text-center">
+                        <i class="fas fa-trophy text-yellow-400 text-3xl mb-2"></i>
+                        <div class="text-2xl font-bold" id="totalWins">0</div>
+                        <div class="text-gray-300">Total Wins</div>
+                    </div>
+                    <div class="glass rounded-xl p-6 text-center">
+                        <i class="fas fa-gamepad text-blue-400 text-3xl mb-2"></i>
+                        <div class="text-2xl font-bold" id="gamesPlayed">0</div>
+                        <div class="text-gray-300">Games Played</div>
+                    </div>
+                    <div class="glass rounded-xl p-6 text-center">
+                        <i class="fas fa-chart-line text-green-400 text-3xl mb-2"></i>
+                        <div class="text-2xl font-bold" id="winRate">0%</div>
+                        <div class="text-gray-300">Win Rate</div>
+                    </div>
+                </div>
+
+                <!-- Game Actions -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Create Room -->
+                    <div class="glass rounded-xl p-6">
+                        <h3 class="text-xl font-bold mb-4">
+                            <i class="fas fa-plus-circle text-green-400 mr-2"></i>Create Room
+                        </h3>
+                        <form id="createRoomForm" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Room Name</label>
+                                <input type="text" id="roomName" required 
+                                       class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                       placeholder="My Awesome Room">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Entry Fee ($)</label>
+                                <select id="entryFee" class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                                    <option value="5">$5</option>
+                                    <option value="10" selected>$10</option>
+                                    <option value="25">$25</option>
+                                    <option value="50">$50</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full btn bg-gradient-success hover:opacity-90 py-2 rounded-lg">
+                                <i class="fas fa-plus mr-2"></i>Create Room
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Join Room -->
+                    <div class="glass rounded-xl p-6">
+                        <h3 class="text-xl font-bold mb-4">
+                            <i class="fas fa-door-open text-blue-400 mr-2"></i>Join Room
+                        </h3>
+                        <div id="availableRooms" class="space-y-3 mb-4 max-h-64 overflow-y-auto">
+                            <div class="text-center text-gray-300 py-4">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Loading rooms...
+                            </div>
+                        </div>
+                        <button id="refreshRooms" class="w-full btn bg-blue-600 hover:bg-blue-700 py-2 rounded-lg">
+                            <i class="fas fa-refresh mr-2"></i>Refresh Rooms
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Leaderboard -->
+                <div class="glass rounded-xl p-6 mt-8">
+                    <h3 class="text-xl font-bold mb-4">
+                        <i class="fas fa-crown text-yellow-400 mr-2"></i>Leaderboard
+                    </h3>
+                    <div id="leaderboard" class="space-y-3">
+                        <div class="text-center text-gray-300 py-4">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>Loading leaderboard...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Room -->
+            <div id="gameRoom" class="hidden">
+                <div class="glass rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold">
+                            <i class="fas fa-gamepad mr-2"></i>
+                            <span id="currentRoomName">Game Room</span>
+                        </h2>
+                        <button id="leaveRoom" class="btn bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg">
+                            <i class="fas fa-times mr-2"></i>Leave Room
+                        </button>
+                    </div>
+
+                    <!-- Room Status -->
+                    <div id="roomStatus" class="text-center mb-6">
+                        <div class="text-lg text-gray-300">Waiting for players...</div>
+                    </div>
+
+                    <!-- Room Info -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-400" id="prizePool">$0</div>
+                            <div class="text-sm text-gray-300">Prize Pool</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-blue-400" id="playerCount">0/6</div>
+                            <div class="text-sm text-gray-300">Players</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-yellow-400" id="entryFee">$10</div>
+                            <div class="text-sm text-gray-300">Entry Fee</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-purple-400" id="roundInfo">Round 1/5</div>
+                            <div class="text-sm text-gray-300">Progress</div>
+                        </div>
+                    </div>
+
+                    <!-- Start Game Button -->
+                    <div id="startGameSection" class="text-center hidden">
+                        <button id="startGame" class="btn bg-gradient-success hover:opacity-90 px-8 py-3 rounded-lg text-lg font-semibold">
+                            <i class="fas fa-play mr-2"></i>Start Game
+                        </button>
+                    </div>
+
+                    <!-- Game Play Area -->
+                    <div id="gamePlayArea" class="hidden">
+                        <div class="text-center mb-6">
+                            <div class="text-3xl font-bold mb-2" id="puzzleSymbols">🎵 + 🏠 = ?</div>
+                            <div class="text-lg text-gray-300 mb-4">
+                                Difficulty: <span id="difficulty" class="font-semibold">Easy</span> • 
+                                Points: <span id="points" class="font-semibold">10</span>
+                            </div>
+                            <div class="text-2xl font-bold text-red-400 mb-4">
+                                <i class="fas fa-clock mr-2"></i>
+                                <span id="timer">30</span>s
+                            </div>
+                        </div>
+
+                        <div class="max-w-md mx-auto">
+                            <input type="text" id="answerInput" 
+                                   class="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-lg"
+                                   placeholder="Enter your answer">
+                            <button id="submitAnswer" class="w-full btn bg-gradient-success hover:opacity-90 py-3 rounded-lg mt-4 font-semibold">
+                                <i class="fas fa-paper-plane mr-2"></i>Submit Answer
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Game Results -->
+                    <div id="gameResults" class="hidden">
+                        <div class="text-center">
+                            <h3 class="text-2xl font-bold mb-4">Game Results</h3>
+                            <div id="resultsContent"></div>
+                            <button id="playAgain" class="btn bg-gradient-success hover:opacity-90 px-6 py-2 rounded-lg mt-4">
+                                <i class="fas fa-redo mr-2"></i>Play Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // Modern Game State Management
+        class GameState {
+            constructor() {
+                this.user = null;
+                this.socket = null;
+                this.currentRoom = null;
+                this.gameData = {
+                    score: 0,
+                    round: 1,
+                    timeLeft: 30,
+                    isPlaying: false
+                };
+                this.timer = null;
+            }
+
+            setUser(user) {
+                this.user = user;
+                this.updateUserInfo();
+            }
+
+            updateUserInfo() {
+                if (this.user) {
+                    document.getElementById('userInfo').classList.remove('hidden');
+                    document.getElementById('userBalance').textContent = `$${(this.user.balance || 0).toFixed(2)}`;
+                }
+            }
+
+            connectSocket() {
+                if (this.socket) {
+                    this.socket.disconnect();
+                }
+                
+                this.socket = io(window.location.origin, {
+                    transports: ['websocket'],
+                    timeout: 20000
+                });
+
+                this.setupSocketListeners();
+            }
+
+            setupSocketListeners() {
+                this.socket.on('connect', () => {
+                    console.log('Connected to server');
+                    this.showToast('Connected to game server', 'success');
+                    
+                    if (this.user) {
+                        this.socket.emit('authenticate', { userId: this.user.uid });
+                    }
+                });
+
+                this.socket.on('disconnect', () => {
+                    console.log('Disconnected from server');
+                    this.showToast('Disconnected from server', 'error');
+                });
+
+                this.socket.on('room_created', (data) => {
+                    this.currentRoom = data.roomId;
+                    this.joinRoom(data.room);
+                    this.showToast('Room created successfully!', 'success');
+                });
+
+                this.socket.on('room_joined', (data) => {
+                    this.currentRoom = data.roomId;
+                    this.joinRoom(data.room);
+                    this.showToast('Joined room successfully!', 'success');
+                });
+
+                this.socket.on('room_updated', (room) => {
+                    this.updateRoomInfo(room);
+                });
+
+                this.socket.on('game_started', (gameData) => {
+                    this.startGame(gameData);
+                });
+
+                this.socket.on('question_updated', (question) => {
+                    this.displayQuestion(question);
+                });
+
+                this.socket.on('answer_result', (result) => {
+                    this.handleAnswerResult(result);
+                });
+
+                this.socket.on('game_ended', (results) => {
+                    this.endGame(results);
+                });
+
+                this.socket.on('rooms_list', (rooms) => {
+                    this.displayRooms(rooms);
+                });
+
+                this.socket.on('leaderboard', (players) => {
+                    this.displayLeaderboard(players);
+                });
+
+                this.socket.on('error', (error) => {
+                    this.showToast(error.message, 'error');
+                });
+            }
+
+            showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = `glass rounded-lg p-4 slide-in-up ${this.getToastClass(type)}`;
+                toast.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas ${this.getToastIcon(type)} mr-2"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+                
+                document.getElementById('toastContainer').appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.remove();
+                }, 5000);
+            }
+
+            getToastClass(type) {
+                const classes = {
+                    success: 'border-green-400 text-green-400',
+                    error: 'border-red-400 text-red-400',
+                    warning: 'border-yellow-400 text-yellow-400',
+                    info: 'border-blue-400 text-blue-400'
+                };
+                return classes[type] || classes.info;
+            }
+
+            getToastIcon(type) {
+                const icons = {
+                    success: 'fa-check-circle',
+                    error: 'fa-exclamation-circle',
+                    warning: 'fa-exclamation-triangle',
+                    info: 'fa-info-circle'
+                };
+                return icons[type] || icons.info;
+            }
+
+            joinRoom(room) {
+                document.getElementById('gameDashboard').classList.add('hidden');
+                document.getElementById('gameRoom').classList.remove('hidden');
+                this.updateRoomInfo(room);
+            }
+
+            updateRoomInfo(room) {
+                document.getElementById('currentRoomName').textContent = room.name;
+                document.getElementById('prizePool').textContent = `$${(room.prizePool / 100).toFixed(2)}`;
+                document.getElementById('playerCount').textContent = `${room.players.length}/${room.maxPlayers}`;
+                document.getElementById('entryFee').textContent = `$${room.entryFee}`;
+                
+                const statusDiv = document.getElementById('roomStatus');
+                const startSection = document.getElementById('startGameSection');
+                
+                if (room.status === 'waiting') {
+                    statusDiv.innerHTML = `<div class="text-lg text-gray-300">Waiting for players... (${room.players.length}/${room.maxPlayers})</div>`;
+                    
+                    if (room.players.length >= 2 && room.hostId === this.socket.id) {
+                        startSection.classList.remove('hidden');
+                    } else {
+                        startSection.classList.add('hidden');
+                    }
+                } else if (room.status === 'playing') {
+                    statusDiv.innerHTML = `<div class="text-lg text-green-400">Game in progress!</div>`;
+                    startSection.classList.add('hidden');
+                }
+            }
+
+            startGame(gameData) {
+                document.getElementById('gamePlayArea').classList.remove('hidden');
+                this.gameData.isPlaying = true;
+                this.gameData.score = 0;
+                this.gameData.round = 1;
+            }
+
+            displayQuestion(question) {
+                document.getElementById('puzzleSymbols').textContent = `${question.symbols} = ?`;
+                document.getElementById('difficulty').textContent = question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1);
+                document.getElementById('points').textContent = question.points;
+                document.getElementById('answerInput').value = '';
+                document.getElementById('answerInput').disabled = false;
+                document.getElementById('submitAnswer').disabled = false;
+                
+                this.gameData.timeLeft = question.timeLimit || 30;
+                this.startTimer();
+            }
+
+            startTimer() {
+                if (this.timer) {
+                    clearInterval(this.timer);
+                }
+                
+                this.timer = setInterval(() => {
+                    this.gameData.timeLeft--;
+                    document.getElementById('timer').textContent = this.gameData.timeLeft;
+                    
+                    if (this.gameData.timeLeft <= 0) {
+                        clearInterval(this.timer);
+                        this.timeUp();
+                    }
+                }, 1000);
+            }
+
+            timeUp() {
+                document.getElementById('answerInput').disabled = true;
+                document.getElementById('submitAnswer').disabled = true;
+                this.showToast("Time's up!", 'warning');
+                
+                if (this.socket && this.currentRoom) {
+                    this.socket.emit('time_up', { roomId: this.currentRoom });
+                }
+            }
+
+            handleAnswerResult(result) {
+                if (result.correct) {
+                    this.gameData.score += result.points;
+                    this.showToast(`Correct! +${result.points} points`, 'success');
+                    document.getElementById('answerInput').disabled = true;
+                    document.getElementById('submitAnswer').disabled = true;
+                } else {
+                    this.showToast('Try again!', 'error');
+                    document.getElementById('answerInput').value = '';
+                    document.getElementById('answerInput').focus();
+                }
+            }
+
+            endGame(results) {
+                if (this.timer) {
+                    clearInterval(this.timer);
+                }
+                
+                document.getElementById('gamePlayArea').classList.add('hidden');
+                document.getElementById('gameResults').classList.remove('hidden');
+                
+                const resultsContent = document.getElementById('resultsContent');
+                resultsContent.innerHTML = `
+                    <div class="text-center">
+                        <h4 class="text-xl font-bold mb-4">Winner: ${results.winner}</h4>
+                        <div class="text-lg text-gray-300 mb-4">Final Score: ${results.finalScores[Object.keys(results.finalScores)[0]]}</div>
+                        <div class="text-green-400 font-bold text-lg">Prize: $${results.payoutResults.payouts[0]?.amount?.toFixed(2) || 0}</div>
+                    </div>
+                `;
+                
+                this.gameData.isPlaying = false;
+            }
+
+            displayRooms(rooms) {
+                const container = document.getElementById('availableRooms');
+                
+                if (rooms.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-300 py-4">No rooms available</div>';
+                    return;
+                }
+                
+                container.innerHTML = rooms.map(room => `
+                    <div class="glass rounded-lg p-4 cursor-pointer hover:bg-white hover:bg-opacity-10 transition-all" 
+                         onclick="gameState.joinRoomById('${room.id}')">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="font-semibold">${room.name}</div>
+                                <div class="text-sm text-gray-300">${room.playerCount}/${room.maxPlayers} players</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-bold text-green-400">$${room.entryFee}</div>
+                                <div class="text-sm text-gray-300">entry fee</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            displayLeaderboard(players) {
+                const container = document.getElementById('leaderboard');
+                
+                if (players.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-300 py-4">No players yet</div>';
+                    return;
+                }
+                
+                container.innerHTML = players.map((player, index) => `
+                    <div class="flex justify-between items-center p-3 glass rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-gradient-success rounded-full flex items-center justify-center mr-3">
+                                <span class="text-sm font-bold">${index + 1}</span>
+                            </div>
+                            <div>
+                                <div class="font-semibold">${player.name}</div>
+                                <div class="text-sm text-gray-300">${player.winRate.toFixed(1)}% win rate</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-green-400">$${player.totalWinnings.toFixed(2)}</div>
+                            <div class="text-sm text-gray-300">${player.gamesPlayed} games</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            joinRoomById(roomId) {
+                if (this.socket) {
+                    this.socket.emit('join_room', { roomId });
+                }
+            }
+        }
+
+        // Initialize game state
+        const gameState = new GameState();
+
+        // Authentication
+        async function handleLogin(email, password) {
+            try {
+                const { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = window.firebase;
+                
+                let userCredential;
+                try {
+                    userCredential = await signInWithEmailAndPassword(auth, email, password);
+                } catch (error) {
+                    if (error.code === 'auth/user-not-found') {
+                        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    } else {
+                        throw error;
+                    }
+                }
+                
+                const user = {
+                    uid: userCredential.user.uid,
+                    email: userCredential.user.email,
+                    balance: 100 // Starting balance
+                };
+                
+                gameState.setUser(user);
+                gameState.connectSocket();
+                
+                showScreen('gameDashboard');
+                gameState.showToast('Welcome to Symbol Duel!', 'success');
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                gameState.showToast('Login failed: ' + error.message, 'error');
+            }
+        }
+
+        // Screen management
+        function showScreen(screenId) {
+            const screens = ['loginScreen', 'gameDashboard', 'gameRoom'];
+            screens.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+            }, 2000);
+
+            // Login form
+            document.getElementById('loginForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                handleLogin(email, password);
+            });
+
+            // Create room form
+            document.getElementById('createRoomForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const roomName = document.getElementById('roomName').value;
+                const entryFee = parseInt(document.getElementById('entryFee').value);
+                
+                if (gameState.socket) {
+                    gameState.socket.emit('create_room', { roomName, entryFee });
+                }
+            });
+
+            // Game controls
+            document.getElementById('startGame').addEventListener('click', () => {
+                if (gameState.socket && gameState.currentRoom) {
+                    gameState.socket.emit('start_game', { roomId: gameState.currentRoom });
+                }
+            });
+
+            document.getElementById('submitAnswer').addEventListener('click', () => {
+                const answer = document.getElementById('answerInput').value.trim();
+                if (answer && gameState.socket && gameState.currentRoom) {
+                    gameState.socket.emit('submit_answer', { 
+                        roomId: gameState.currentRoom, 
+                        answer: answer 
+                    });
+                }
+            });
+
+            document.getElementById('leaveRoom').addEventListener('click', () => {
+                showScreen('gameDashboard');
+                if (gameState.socket && gameState.currentRoom) {
+                    gameState.socket.emit('leave_room', { roomId: gameState.currentRoom });
+                }
+            });
+
+            document.getElementById('refreshRooms').addEventListener('click', () => {
+                if (gameState.socket) {
+                    gameState.socket.emit('get_rooms');
+                }
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                if (window.firebase.auth) {
+                    window.firebase.signOut(window.firebase.auth);
+                }
+                gameState.user = null;
+                showScreen('loginScreen');
+            });
+
+            // Enter key for answer input
+            document.getElementById('answerInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('submitAnswer').click();
+                }
+            });
+
+            // Auto-refresh rooms every 10 seconds
+            setInterval(() => {
+                if (gameState.socket && document.getElementById('gameDashboard').classList.contains('hidden') === false) {
+                    gameState.socket.emit('get_rooms');
+                }
+            }, 10000);
+        });
+    </script>
+</body>
+</html>
