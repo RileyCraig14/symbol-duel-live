@@ -611,8 +611,8 @@
                 }
                 
                 container.innerHTML = rooms.map(room => `
-                    <div class="glass rounded-lg p-4 cursor-pointer hover:bg-white hover:bg-opacity-10 transition-all" 
-                         onclick="gameState.joinRoomById('${room.id}')">
+                    <div class="glass rounded-lg p-4 cursor-pointer hover:bg-white hover:bg-opacity-10 transition-all room-item" 
+                         data-room-id="${room.id}">
                         <div class="flex justify-between items-center">
                             <div>
                                 <div class="font-semibold">${room.name}</div>
@@ -625,6 +625,14 @@
                         </div>
                     </div>
                 `).join('');
+                
+                // Add event listeners to room items
+                container.querySelectorAll('.room-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const roomId = this.getAttribute('data-room-id');
+                        gameState.joinRoomById(roomId);
+                    });
+                });
             }
 
             displayLeaderboard(players) {
