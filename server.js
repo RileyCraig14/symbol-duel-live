@@ -244,7 +244,7 @@ app.post('/api/deduct-balance', async (req, res) => {
 const rooms = new Map();
 const players = new Map();
 const leaderboard = new Map(); // Track player statistics
-const gameHistory = []; // Track game history for analytics
+const gameHistory = []; // Track game history for analytics (max 1000 games)
 const userBalances = new Map(); // Track user balances
 
 // Proven payout configuration (based on FanDuel/DraftKings models)
@@ -383,7 +383,16 @@ io.on('connection', (socket) => {
             return;
         }
         
-        const entryFeeCents = (data.entryFee || 10) * 100; // Convert to cents
+        // Validate entry fee
+        const entryFee = parseFloat(data.entryFee) || 10;
+        if (entryFee < 1 || entryFee > 200 || !isFinite(entryFee)) {
+            socket.emit('error', { 
+                message: 'Invalid entry fee. Must be between $1 and $200.' 
+            });
+            return;
+        }
+        
+        const entryFeeCents = entryFee * 100; // Convert to cents
         
         console.log('Player user ID:', player.userId, 'Entry fee cents:', entryFeeCents);
         
@@ -393,7 +402,7 @@ io.on('connection', (socket) => {
         
         if (currentBalance < entryFeeCents) {
             socket.emit('error', { 
-                message: `Insufficient balance. Need $${(data.entryFee || 10).toFixed(2)} to create room. Current balance: $${(currentBalance/100).toFixed(2)}` 
+                message: `Insufficient balance. Need $${entryFee.toFixed(2)} to create room. Current balance: $${(currentBalance/100).toFixed(2)}` 
             });
             return;
         }
@@ -405,8 +414,8 @@ io.on('connection', (socket) => {
         const room = {
             id: roomId,
             name: data.roomName || 'Game Room',
-            entryFee: data.entryFee || 10,
-            prizePool: (data.entryFee || 10) * 100, // Initialize prize pool with entry fee in cents
+            entryFee: entryFee,
+            prizePool: entryFee * 100, // Initialize prize pool with entry fee in cents
             hostId: socket.id,
             hostName: players.get(socket.id).name,
             players: [socket.id],
@@ -428,7 +437,7 @@ io.on('connection', (socket) => {
         // Notify player of balance update
         socket.emit('balance_updated', { 
             newBalance: newBalance / 100, 
-            message: `Entry fee of $${(entryFeeCents/100).toFixed(2)} deducted for room creation` 
+            message: `Entry fee of $${entryFee.toFixed(2)} deducted for room creation` 
         });
         
         socket.emit('room_created', { roomId, room });
@@ -542,8 +551,22 @@ io.on('connection', (socket) => {
             return;
         }
         
+        // Validate answer
+        if (!data.answer || typeof data.answer !== 'string') {
+            const error = { message: 'Invalid answer format' };
+            if (callback) callback(error);
+            return;
+        }
+        
+        const answer = data.answer.trim().toLowerCase();
+        if (answer.length === 0 || answer.length > 100) {
+            const error = { message: 'Answer must be between 1 and 100 characters' };
+            if (callback) callback(error);
+            return;
+        }
+        
         // Check answer
-        const isCorrect = room.currentPuzzle.alternatives.includes(data.answer.toLowerCase());
+        const isCorrect = room.currentPuzzle.alternatives.includes(answer);
         const playerName = players.get(socket.id).name;
         
         // Initialize player attempts if not exists
@@ -558,7 +581,7 @@ io.on('connection', (socket) => {
         
         // Add this attempt
         room.answers[socket.id].attempts.push({
-            answer: data.answer,
+            answer: answer,
             correct: isCorrect,
             timestamp: new Date().toISOString()
         });
@@ -588,7 +611,7 @@ io.on('connection', (socket) => {
             points: isCorrect ? room.currentPuzzle.points : 0,
             message: isCorrect ? 'Correct! +' + room.currentPuzzle.points + ' points' : 'Try again!',
             correctAnswer: room.currentPuzzle.answer,
-            yourAnswer: data.answer,
+            yourAnswer: answer,
             attempts: room.answers[socket.id].attempts.length,
             isFirstCorrect: isCorrect && room.answers[socket.id].attempts.length === 1
         });
@@ -603,14 +626,14 @@ io.on('connection', (socket) => {
         io.to(data.roomId).emit('player_answered', {
             playerId: socket.id,
             playerName: players.get(socket.id).name,
-            answer: data.answer,
+            answer: answer,
             correct: isCorrect,
             points: isCorrect ? room.currentPuzzle.points : 0,
             correctAnswer: room.currentPuzzle.answer,
             message: isCorrect ? 'Correct! +' + room.currentPuzzle.points + ' points' : 'Incorrect answer'
         });
         
-        console.log('Answer submitted:', players.get(socket.id).name, 'answered', data.answer, 'correct:', isCorrect);
+        console.log('Answer submitted:', players.get(socket.id).name, 'answered', answer, 'correct:', isCorrect);
         
         // Check if all players have answered (but don't auto-end round - let timer handle it)
         // This is just for logging purposes now
@@ -669,6 +692,18 @@ io.on('connection', (socket) => {
                     delete room.scores[socket.id];
                     delete room.answers[socket.id];
                 }
+                
+                // Refund entry fee to disconnected player
+                if (player.userId) {
+                    const currentBalance = userBalances.get(player.userId) || 0;
+                    const refundAmount = room.entryFee * 100; // Convert to cents
+                    const newBalance = currentBalance + refundAmount;
+                    userBalances.set(player.userId, newBalance);
+                    console.log(`Refunded $${room.entryFee} to disconnected player ${player.name}`);
+                }
+                
+                // Remove entry fee from prize pool
+                room.prizePool -= (room.entryFee * 100);
                 
                 if (room.hostId === socket.id) {
                     if (room.players.length > 0) {
@@ -878,6 +913,13 @@ function endGame(room) {
     setTimeout(() => {
         removeFinishedRoom(room);
     }, 10000);
+}
+
+function removeFinishedRoom(room) {
+    console.log('Removing finished room from memory and lobby:', room.id);
+    rooms.delete(room.id);
+    // Notify all clients to update their room lists
+    io.emit('rooms_list', Array.from(rooms.values()).filter(r => r.status === 'waiting' && r.players.length < r.maxPlayers));
 }
 
 function resetRoomForNextGame(room) {

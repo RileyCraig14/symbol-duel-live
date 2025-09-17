@@ -1704,6 +1704,12 @@
         }
         
         function startGameTimer() {
+            // Clear any existing timer first
+            if (gameTimer) {
+                clearInterval(gameTimer);
+                gameTimer = null;
+            }
+            
             // Don't reset timeLeft here - it should be set by displayQuestion
             gameTimer = setInterval(function() {
                 gameState.timeLeft--;
