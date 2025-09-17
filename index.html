@@ -1429,8 +1429,11 @@
             
             console.log('Creating room - Tab:', TAB_ID, 'User ID:', currentUser.uid, 'Socket ID:', socket.id, 'Room:', roomName, 'Entry Fee:', entryFee);
             
+            // Add tab ID to room name to ensure uniqueness
+            const uniqueRoomName = roomName + ' (' + TAB_ID.substring(0, 8) + ')';
+            
             socket.emit('create_room', {
-                roomName: roomName,
+                roomName: uniqueRoomName,
                 entryFee: entryFee
             });
             
@@ -1589,7 +1592,9 @@
             
             // Reset and start timer with server's time limit
             clearInterval(gameTimer);
+            gameTimer = null;
             gameState.timeLeft = questionData.timeLimit || 30;
+            document.getElementById('timer').textContent = gameState.timeLeft;
             startGameTimer();
         }
         
@@ -1710,7 +1715,7 @@
                 gameTimer = null;
             }
             
-            // Don't reset timeLeft here - it should be set by displayQuestion
+            // Timer will be set by displayQuestion function
             gameTimer = setInterval(function() {
                 gameState.timeLeft--;
                 document.getElementById('timer').textContent = gameState.timeLeft;

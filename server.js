@@ -257,11 +257,13 @@ const PAYOUT_CONFIG = {
 };
 
 // Proven tournament payout calculation (based on FanDuel/DraftKings models)
-function calculateTournamentPayouts(prizePool, playerCount) {
-    const houseTake = prizePool * PAYOUT_CONFIG.HOUSE_EDGE;
-    const playerPot = prizePool * PAYOUT_CONFIG.PLAYER_PAYOUT;
+function calculateTournamentPayouts(prizePoolCents, playerCount) {
+    // Prize pool is in cents, convert to dollars for calculation
+    const prizePoolDollars = prizePoolCents / 100;
+    const houseTake = prizePoolDollars * PAYOUT_CONFIG.HOUSE_EDGE;
+    const playerPot = prizePoolDollars * PAYOUT_CONFIG.PLAYER_PAYOUT;
     
-    console.log('Payout calculation - Prize Pool:', prizePool, 'Player Count:', playerCount, 'Player Pot:', playerPot);
+    console.log('Payout calculation - Prize Pool (cents):', prizePoolCents, 'Prize Pool (dollars):', prizePoolDollars, 'Player Count:', playerCount, 'Player Pot:', playerPot);
     
     // Tournament payout structure (proven from successful platforms)
     const payouts = {};
@@ -294,12 +296,13 @@ function calculateTournamentPayouts(prizePool, playerCount) {
     }
     
     return {
-        totalPot: totalPot,
+        totalPot: prizePoolDollars,
         houseTake: houseTake,
         playerPot: playerPot,
         payouts: payouts,
         breakdown: {
-            entryFee: entryFee,
+            prizePoolCents: prizePoolCents,
+            prizePoolDollars: prizePoolDollars,
             playerCount: playerCount,
             houseEdge: PAYOUT_CONFIG.HOUSE_EDGE,
             playerPayout: PAYOUT_CONFIG.PLAYER_PAYOUT
@@ -742,22 +745,21 @@ function startRound(room) {
     io.to(room.id).emit('question_updated', questionData);
     console.log('Question sent:', currentPuzzle.symbols, 'Difficulty:', currentPuzzle.difficulty);
     
-    // Timer for round (30 seconds)
-    setTimeout(() => {
-        if (room.status === 'playing') {
-            endRound(room);
-        }
-    }, 30000);
+    // Note: Round timer is handled by frontend time_up event
+    // This prevents double timer calls
 }
 
 function endRound(room) {
     console.log('Ending round', room.currentRound, 'in room', room.id);
     
     room.currentRound++;
+    console.log('Round incremented to:', room.currentRound, 'Total rounds:', room.totalRounds);
     
     if (room.currentRound > room.totalRounds) {
+        console.log('Game finished - calling endGame');
         endGame(room);
     } else {
+        console.log('Starting next round in 3 seconds');
         setTimeout(() => {
             startRound(room);
         }, 3000);
@@ -807,7 +809,7 @@ function endGame(room) {
         const position = player.position;
         const payoutAmount = payoutStructure.payouts[position];
         
-        if (payoutAmount && payoutAmount >= (PAYOUT_CONFIG.MINIMUM_PAYOUT * 100)) {
+        if (payoutAmount && payoutAmount >= PAYOUT_CONFIG.MINIMUM_PAYOUT) {
             // Add real money to player's balance
             try {
                 // Get the Firebase user ID for this player
@@ -829,7 +831,7 @@ function endGame(room) {
                 }
                 
                 const currentBalance = userBalances.get(userId) || 0;
-                const newBalance = currentBalance + payoutAmount; // Prize pool already in cents
+                const newBalance = currentBalance + (payoutAmount * 100); // Convert dollars to cents
                 userBalances.set(userId, newBalance);
                 
                 payoutResults.payouts.push({
