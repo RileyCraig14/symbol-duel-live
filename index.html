@@ -1500,7 +1500,7 @@
             // Update room info
             document.getElementById('roomEntryFee').textContent = room.entryFee || 10;
             document.getElementById('roomPlayerCount').textContent = room.players ? room.players.length : 1;
-            document.getElementById('roomPrizePool').textContent = (room.prizePool || 0).toFixed(2);
+            document.getElementById('roomPrizePool').textContent = ((room.prizePool || 0) / 100).toFixed(2);
             
             if (room.status === 'waiting') {
                 var playerCount = room.players ? room.players.length : 1;

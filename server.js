@@ -406,7 +406,7 @@ io.on('connection', (socket) => {
             id: roomId,
             name: data.roomName || 'Game Room',
             entryFee: data.entryFee || 10,
-            prizePool: data.entryFee || 10, // Initialize prize pool with entry fee
+            prizePool: (data.entryFee || 10) * 100, // Initialize prize pool with entry fee in cents
             hostId: socket.id,
             hostName: players.get(socket.id).name,
             players: [socket.id],
@@ -476,8 +476,8 @@ io.on('connection', (socket) => {
         const newBalance = currentBalance - entryFeeCents;
         userBalances.set(player.userId, newBalance);
         
-        // Add entry fee to prize pool
-        room.prizePool += room.entryFee;
+        // Add entry fee to prize pool (in cents)
+        room.prizePool += (room.entryFee * 100);
         
         room.players.push(socket.id);
         room.playerNames.push(player.name);
@@ -772,7 +772,7 @@ function endGame(room) {
         const position = player.position;
         const payoutAmount = payoutStructure.payouts[position];
         
-        if (payoutAmount && payoutAmount >= PAYOUT_CONFIG.MINIMUM_PAYOUT) {
+        if (payoutAmount && payoutAmount >= (PAYOUT_CONFIG.MINIMUM_PAYOUT * 100)) {
             // Add real money to player's balance
             try {
                 // Get the Firebase user ID for this player
@@ -794,7 +794,7 @@ function endGame(room) {
                 }
                 
                 const currentBalance = userBalances.get(userId) || 0;
-                const newBalance = currentBalance + (payoutAmount * 100); // Convert to cents
+                const newBalance = currentBalance + payoutAmount; // Prize pool already in cents
                 userBalances.set(userId, newBalance);
                 
                 payoutResults.payouts.push({
