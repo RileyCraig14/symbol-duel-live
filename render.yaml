@@ -1,14 +1,15 @@
-name: Symbol Duel Backend
-services:
-  - type: web
-    name: symbol-duel-backend
-    env: node
-    plan: free
-    buildCommand: npm install
-    startCommand: node server.js
-    envVars:
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_PUBLISHABLE_KEY
-        sync: false
-    healthCheckPath: /api/stats
+# Render deployment configuration for Symbol Duel
+
+# Build command
+npm install
+
+# Start command  
+npm start
+
+# Environment variables
+NODE_ENV=production
+PORT=10000
+CORS_ORIGIN=*
+
+# Health check
+GET /

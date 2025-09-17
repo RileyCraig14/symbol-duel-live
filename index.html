@@ -3,1830 +3,788 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎯 Symbol Duel - Multiplayer Rebus Battles</title>
+    <title>🎯 Symbol Duel - Modern Multiplayer Trivia</title>
     
-    <!-- Stripe.js -->
-    <script src="https://js.stripe.com/v3/"></script>
+    <!-- Modern CSS Framework -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .container {
-            max-width: 500px;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 40px;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
-        }
-        
-        .logo {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 30px;
-            color: #ffd700;
-        }
-        
-        .subtitle {
-            text-align: center;
-            color: #ccc;
-            margin-bottom: 30px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #ffd700;
-            font-weight: bold;
-        }
-        
-        input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ffd700;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 16px;
-        }
-        
-        input::placeholder {
-            color: #ccc;
-        }
-        
-        .btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(45deg, #ffd700, #ffed4e);
-            color: #1a1a2e;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 10px;
-            transition: transform 0.2s;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-        
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .error {
-            color: #ff6b6b;
-            margin-top: 10px;
-            text-align: center;
-            padding: 10px;
-            background: rgba(255, 107, 107, 0.1);
-            border-radius: 5px;
-        }
-        
-        .success {
-            color: #4ade80;
-            margin-top: 10px;
-            text-align: center;
-            padding: 10px;
-            background: rgba(74, 222, 128, 0.1);
-            border-radius: 5px;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .game-area {
-            text-align: center;
-        }
-        
-        .user-info {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-        }
-        
-        .balance {
-            font-size: 1.5rem;
-            color: #ffd700;
-            margin: 10px 0;
-        }
-        
-        .game-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 20px 0;
-        }
-        
-        .game-btn {
-            padding: 15px;
-            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        
-        .game-btn:hover {
-            transform: translateY(-2px);
-        }
-        
-        .game-results {
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .winner {
-            background: rgba(255, 215, 0, 0.2);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            border: 2px solid #ffd700;
-        }
-        
-        .payouts {
-            margin: 20px 0;
-        }
-        
-        .payout-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin: 15px 0;
-        }
-        
-        .payout-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .payout-item.success {
-            background: rgba(0, 255, 0, 0.2);
-            border: 1px solid #00ff00;
-        }
-        
-        .payout-item.error {
-            background: rgba(255, 0, 0, 0.2);
-            border: 1px solid #ff0000;
-        }
-        
-        .game-summary {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-        
-        .game-summary p {
-            margin: 5px 0;
-        }
-        
-        .game-btn.primary {
-            background: linear-gradient(45deg, #4ade80, #22c55e);
-        }
-        
-        .game-btn.warning {
-            background: linear-gradient(45deg, #f59e0b, #d97706);
-        }
-        
-        .room-list {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .room-item {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        
-        .room-item:hover {
-            background: rgba(255, 215, 0, 0.1);
-        }
-        
-        .puzzle-area {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 30px;
-            border-radius: 15px;
-            margin: 20px 0;
-            text-align: center;
-        }
-        
-        .puzzle-symbols {
-            font-size: 3rem;
-            margin: 20px 0;
-            color: #ffd700;
-        }
-        
-        .answer-input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ffd700;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 18px;
-            text-align: center;
-            margin: 20px 0;
-        }
-        
-        .timer {
-            font-size: 1.5rem;
-            color: #ffd700;
-            margin: 10px 0;
-        }
-        
-        .round-info {
-            font-size: 1.2rem;
-            color: #ccc;
-            margin: 10px 0;
-        }
-        
-        /* Enhanced feedback animations */
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
-        
-        @keyframes celebration {
-            0% { transform: scale(1) rotate(0deg); }
-            25% { transform: scale(1.05) rotate(1deg); }
-            50% { transform: scale(1.1) rotate(-1deg); }
-            75% { transform: scale(1.05) rotate(1deg); }
-            100% { transform: scale(1) rotate(0deg); }
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10% { transform: translateX(-5px); }
-            20% { transform: translateX(5px); }
-            30% { transform: translateX(-5px); }
-            40% { transform: translateX(5px); }
-            50% { transform: translateX(-5px); }
-            60% { transform: translateX(5px); }
-            70% { transform: translateX(-5px); }
-            80% { transform: translateX(5px); }
-            90% { transform: translateX(-5px); }
-        }
-        
-        @keyframes confettiFall {
-            0% {
-                transform: translateY(-10px) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(100vh) rotate(360deg);
-                opacity: 0;
-            }
-        }
-        
-        /* Enhanced message styling */
-        #message {
-            transition: all 0.3s ease-in-out;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 15px 0;
-            font-weight: bold;
-            text-align: center;
-            animation: slideIn 0.3s ease-out;
-        }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        /* Submit button enhanced states */
-        .game-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed !important;
-        }
-        
-        .game-btn.primary:disabled {
-            background-color: #6b7280 !important;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="logo">🎯 SYMBOL DUEL</div>
-        <div class="subtitle">Multiplayer Rebus Puzzle Battles</div>
-        <div style="text-align: center; color: #4ade80; font-size: 0.9rem; margin-bottom: 20px;">
-            ⚡ Real-time multiplayer • 💰 Tournament payouts • 🏆 Leaderboards
-        </div>
-        
-        <!-- Login Form -->
-        <div id="loginForm">
-            <h2 style="text-align: center; margin-bottom: 30px; color: #ffd700;">Enter the Arena</h2>
-            
-            <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" placeholder="Enter your email" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" placeholder="Enter your password" required>
-            </div>
-            
-            <button class="btn" id="loginButton" onclick="handleAuth()">Enter the Arena</button>
-            <p style="text-align: center; color: #ccc; margin-top: 15px;">New users will be automatically registered</p>
-            
-            <div id="message"></div>
-        </div>
-        
-        <!-- Game Area -->
-        <div id="gameArea" class="game-area hidden">
-            <div class="user-info">
-                <h2>Welcome to Symbol Duel!</h2>
-                <p>You are logged in successfully.</p>
-                <div class="balance">💰 Balance: $<span id="balance">0.00</span></div>
-                <div class="game-buttons" style="margin-top: 15px;">
-                    <button class="game-btn primary" onclick="showGameMenu()" style="width: auto; padding: 10px 20px;">🎮 Go to Game</button>
-                    <button class="btn" onclick="logout()" style="width: auto; padding: 10px 20px;">Logout</button>
-                </div>
-            </div>
-            
-            <!-- Main Game Menu -->
-            <div id="gameMenu">
-                <div class="game-buttons">
-                    <button class="game-btn primary" onclick="showCreateRoom()">🏠 Create Room</button>
-                    <button class="game-btn primary" onclick="showJoinRoom()">🚪 Join Room</button>
-                    <button class="game-btn warning" onclick="showLeaderboard()">🏆 Leaderboard</button>
-                    <button class="game-btn" onclick="showAddFunds()">💳 Add Funds</button>
-                </div>
-            </div>
-            
-            <!-- Create Room -->
-            <div id="createRoom" class="hidden">
-                <h3 style="color: #ffd700; margin-bottom: 20px;">🏠 Create Game Room</h3>
-                <div class="form-group">
-                    <label for="roomName">Room Name:</label>
-                    <input type="text" id="roomName" placeholder="Enter room name" value="Riley's Room">
-                </div>
-                <div class="form-group">
-                    <label for="entryFee">Entry Fee ($):</label>
-                    <input type="number" id="entryFee" placeholder="10" value="10" min="1" max="200" 
-                           oninput="validateEntryFee()" onkeypress="return event.charCode >= 48 && event.charCode <= 57"
-                           style="width: 100%; padding: 10px; font-size: 16px; border: 2px solid #333; border-radius: 5px;">
-                    <div id="entryFeeError" style="color: #ff6b6b; font-size: 12px; margin-top: 5px; display: none;">
-                        Entry fee must be between $1 and $200
-                    </div>
-                    <div style="color: #ccc; font-size: 11px; margin-top: 2px;">
-                        Maximum: $200
-                    </div>
-                </div>
-                <div class="game-buttons">
-                    <button class="game-btn primary" onclick="createRoom()">Create Room</button>
-                    <button class="game-btn" onclick="showGameMenu()">Back</button>
-                </div>
-            </div>
-            
-            <!-- Join Room -->
-            <div id="joinRoom" class="hidden">
-                <h3 style="color: #ffd700; margin-bottom: 20px;">🚪 Join Game Room</h3>
-                <div class="room-list" id="roomList">
-                    <div style="text-align: center; padding: 20px; color: #ccc;">
-                        Loading available rooms...
-                    </div>
-                </div>
-                <button class="game-btn" onclick="showGameMenu()">Back</button>
-            </div>
-            
-            <!-- Game Room -->
-            <div id="gameRoom" class="hidden">
-                <h3 style="color: #ffd700; margin-bottom: 20px;">🎮 Game Room: <span id="currentRoomName">Room 1</span></h3>
-                <div id="gameStatus" style="text-align: center; margin: 20px 0; color: #ffd700;"></div>
-                <div id="roomInfo" style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; margin: 15px 0;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem;">
-                        <div>💰 Entry Fee: $<span id="roomEntryFee">10</span></div>
-                        <div>👥 Players: <span id="roomPlayerCount">1</span>/6</div>
-                        <div>🏆 Prize Pool: $<span id="roomPrizePool">0</span></div>
-                        <div>🎯 Winner Takes: 94%</div>
-                    </div>
-                </div>
-                <div id="startGameButton" class="hidden" style="text-align: center; margin: 20px 0;">
-                    <button class="game-btn primary" onclick="startGameManually()">Start Game</button>
-                </div>
-                <div id="puzzle-area" class="puzzle-area hidden">
-                    <div class="round-info">Round <span id="currentRound">1</span> of 5</div>
-                    <div style="color: #4ade80; font-size: 0.9rem; margin: 5px 0;">
-                        Difficulty: <span id="currentDifficulty">Easy</span> • Points: <span id="currentPoints">10</span>
-                    </div>
-                    <h4>Rebus Puzzle</h4>
-                    <div class="puzzle-symbols" id="puzzleSymbols">🎵 + 🏠 = ?</div>
-                    <div class="timer">Time: <span id="timer">30</span>s</div>
-                    <input type="text" class="answer-input" id="answerInput" placeholder="Enter your answer">
-                    <div class="game-buttons">
-                        <button class="game-btn primary" onclick="submitAnswer()">Submit Answer</button>
-                        <button class="game-btn" onclick="leaveRoom()">Leave Room</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Leaderboard -->
-            <div id="leaderboard" class="hidden">
-                <h3 style="color: #ffd700; margin-bottom: 20px;">🏆 Top Players</h3>
-                <div class="room-list" id="leaderboardList">
-                    <div style="padding: 20px; text-align: center; color: #ccc;">
-                        Loading leaderboard...
-                    </div>
-                </div>
-                <div class="game-buttons">
-                    <button class="game-btn" onclick="showGameMenu()">Back</button>
-                    <button class="game-btn primary" onclick="loadStats()">📊 Game Stats</button>
-                </div>
-            </div>
-            
-            <!-- Game Statistics -->
-            <div id="gameStats" class="hidden">
-                <h3 style="color: #ffd700; margin-bottom: 20px;">📊 Game Statistics</h3>
-                <div class="room-list" id="statsList">
-                    <div style="padding: 20px; text-align: center; color: #ccc;">
-                        Loading statistics...
-                    </div>
-                </div>
-                <button class="game-btn" onclick="showLeaderboard()">Back to Leaderboard</button>
-            </div>
-            
-            <!-- Add Funds -->
-            <div id="addFunds" class="hidden">
-                <h3 style="color: #ffd700; margin-bottom: 20px;">💳 Add Funds</h3>
-                <div class="form-group">
-                    <label for="amount">Amount ($):</label>
-                    <input type="number" id="amount" placeholder="50" value="50" min="10" max="1000">
-                </div>
-                <div class="game-buttons">
-                    <button class="game-btn primary" onclick="addFunds()">Add Funds</button>
-                    <button class="game-btn" onclick="showGameMenu()">Back</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Socket.IO -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     
-    <script>
-        // Create unique tab ID to prevent cross-tab interference
-        const TAB_ID = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        console.log('Tab ID:', TAB_ID);
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
         
-        // Game state - make it unique to this tab
-        var gameState = {
-            currentRoom: null,
-            gamePhase: 'menu',
-            score: 0,
-            timeLeft: 30,
-            round: 1,
-            balance: 0, // Will be loaded from server
-            playerName: 'Player' + Math.floor(Math.random() * 1000), // Generate random player name
-            currentEntryFee: 0,
-            tabId: TAB_ID // Add tab ID to prevent cross-tab issues
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCRovI9X-IWPYVtJAauHsvvE0XhHkJ8NEA",
+            authDomain: "symbol-duel.firebaseapp.com",
+            projectId: "symbol-duel",
+            storageBucket: "symbol-duel.firebasestorage.app",
+            messagingSenderId: "115651908526",
+            appId: "1:115651908526:web:d0425e58de0991a38fee3f",
+            measurementId: "G-BNTRQY9YVY"
         };
         
-        // Socket.IO connection
-        var socket = null;
-        var isConnected = false;
-        var currentPuzzle = null;
-        var gameTimer = null;
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
         
-        // Initialize Socket.IO connection
-        function initializeSocket() {
-            if (socket) {
-                socket.disconnect();
+        // Make Firebase available globally
+        window.firebase = { auth, db, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, doc, getDoc, setDoc, updateDoc, increment };
+    </script>
+    
+    <style>
+        /* Custom animations and modern styling */
+        @keyframes slideInUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% { transform: translate3d(0,0,0); }
+            40%, 43% { transform: translate3d(0,-30px,0); }
+            70% { transform: translate3d(0,-15px,0); }
+            90% { transform: translate3d(0,-4px,0); }
+        }
+        
+        .slide-in-up { animation: slideInUp 0.5s ease-out; }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        .pulse-animation { animation: pulse 2s infinite; }
+        .bounce-animation { animation: bounce 1s; }
+        
+        /* Custom gradient backgrounds */
+        .bg-gradient-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .bg-gradient-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .bg-gradient-danger { background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%); }
+        .bg-gradient-warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        
+        /* Glass morphism effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+        
+        /* Responsive text sizing */
+        .text-responsive { font-size: clamp(1rem, 4vw, 1.5rem); }
+        .text-responsive-lg { font-size: clamp(1.5rem, 6vw, 3rem); }
+        
+        /* Loading spinner */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Mobile-first responsive design */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .btn { padding: 0.75rem 1rem; font-size: 0.9rem; }
+            .card { margin: 0.5rem 0; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-primary min-h-screen text-white">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-gradient-primary flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="spinner mx-auto mb-4"></div>
+            <h2 class="text-2xl font-bold mb-2">Loading Symbol Duel...</h2>
+            <p class="text-gray-300">Preparing your gaming experience</p>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app" class="min-h-screen hidden">
+        <!-- Header -->
+        <header class="bg-black bg-opacity-20 backdrop-blur-sm border-b border-white border-opacity-20">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-success rounded-full flex items-center justify-center">
+                            <i class="fas fa-brain text-white text-lg"></i>
+                        </div>
+                        <h1 class="text-2xl font-bold">Symbol Duel</h1>
+                    </div>
+                    <div id="userInfo" class="hidden">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-right">
+                                <div class="text-sm text-gray-300">Balance</div>
+                                <div id="userBalance" class="text-lg font-bold text-green-400">$0.00</div>
+                            </div>
+                            <button id="logoutBtn" class="btn bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8">
+            <!-- Login Screen -->
+            <div id="loginScreen" class="max-w-md mx-auto">
+                <div class="glass rounded-2xl p-8 slide-in-up">
+                    <div class="text-center mb-8">
+                        <div class="w-20 h-20 bg-gradient-success rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-puzzle-piece text-white text-3xl"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold mb-2">Welcome to Symbol Duel</h2>
+                        <p class="text-gray-300">Multiplayer rebus puzzle battles</p>
+                    </div>
+                    
+                    <form id="loginForm" class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Email</label>
+                            <input type="email" id="email" required 
+                                   class="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Enter your email">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Password</label>
+                            <input type="password" id="password" required 
+                                   class="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Enter your password">
+                        </div>
+                        
+                        <button type="submit" class="w-full btn bg-gradient-success hover:opacity-90 py-3 rounded-lg font-semibold">
+                            <i class="fas fa-play mr-2"></i>Enter Game
+                        </button>
+                        
+                        <p class="text-center text-sm text-gray-300">
+                            New users will be automatically registered
+                        </p>
+                    </form>
+                    
+                    <div id="loginMessage" class="mt-4 hidden"></div>
+                </div>
+            </div>
+
+            <!-- Game Dashboard -->
+            <div id="gameDashboard" class="hidden">
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="glass rounded-xl p-6 text-center">
+                        <i class="fas fa-trophy text-yellow-400 text-3xl mb-2"></i>
+                        <div class="text-2xl font-bold" id="totalWins">0</div>
+                        <div class="text-gray-300">Total Wins</div>
+                    </div>
+                    <div class="glass rounded-xl p-6 text-center">
+                        <i class="fas fa-gamepad text-blue-400 text-3xl mb-2"></i>
+                        <div class="text-2xl font-bold" id="gamesPlayed">0</div>
+                        <div class="text-gray-300">Games Played</div>
+                    </div>
+                    <div class="glass rounded-xl p-6 text-center">
+                        <i class="fas fa-chart-line text-green-400 text-3xl mb-2"></i>
+                        <div class="text-2xl font-bold" id="winRate">0%</div>
+                        <div class="text-gray-300">Win Rate</div>
+                    </div>
+                </div>
+
+                <!-- Game Actions -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Create Room -->
+                    <div class="glass rounded-xl p-6">
+                        <h3 class="text-xl font-bold mb-4">
+                            <i class="fas fa-plus-circle text-green-400 mr-2"></i>Create Room
+                        </h3>
+                        <form id="createRoomForm" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Room Name</label>
+                                <input type="text" id="roomName" required 
+                                       class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                       placeholder="My Awesome Room">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Entry Fee ($)</label>
+                                <select id="entryFee" class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                                    <option value="5">$5</option>
+                                    <option value="10" selected>$10</option>
+                                    <option value="25">$25</option>
+                                    <option value="50">$50</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full btn bg-gradient-success hover:opacity-90 py-2 rounded-lg">
+                                <i class="fas fa-plus mr-2"></i>Create Room
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Join Room -->
+                    <div class="glass rounded-xl p-6">
+                        <h3 class="text-xl font-bold mb-4">
+                            <i class="fas fa-door-open text-blue-400 mr-2"></i>Join Room
+                        </h3>
+                        <div id="availableRooms" class="space-y-3 mb-4 max-h-64 overflow-y-auto">
+                            <div class="text-center text-gray-300 py-4">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Loading rooms...
+                            </div>
+                        </div>
+                        <button id="refreshRooms" class="w-full btn bg-blue-600 hover:bg-blue-700 py-2 rounded-lg">
+                            <i class="fas fa-refresh mr-2"></i>Refresh Rooms
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Leaderboard -->
+                <div class="glass rounded-xl p-6 mt-8">
+                    <h3 class="text-xl font-bold mb-4">
+                        <i class="fas fa-crown text-yellow-400 mr-2"></i>Leaderboard
+                    </h3>
+                    <div id="leaderboard" class="space-y-3">
+                        <div class="text-center text-gray-300 py-4">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>Loading leaderboard...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Room -->
+            <div id="gameRoom" class="hidden">
+                <div class="glass rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold">
+                            <i class="fas fa-gamepad mr-2"></i>
+                            <span id="currentRoomName">Game Room</span>
+                        </h2>
+                        <button id="leaveRoom" class="btn bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg">
+                            <i class="fas fa-times mr-2"></i>Leave Room
+                        </button>
+                    </div>
+
+                    <!-- Room Status -->
+                    <div id="roomStatus" class="text-center mb-6">
+                        <div class="text-lg text-gray-300">Waiting for players...</div>
+                    </div>
+
+                    <!-- Room Info -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-400" id="prizePool">$0</div>
+                            <div class="text-sm text-gray-300">Prize Pool</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-blue-400" id="playerCount">0/6</div>
+                            <div class="text-sm text-gray-300">Players</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-yellow-400" id="entryFee">$10</div>
+                            <div class="text-sm text-gray-300">Entry Fee</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-purple-400" id="roundInfo">Round 1/5</div>
+                            <div class="text-sm text-gray-300">Progress</div>
+                        </div>
+                    </div>
+
+                    <!-- Start Game Button -->
+                    <div id="startGameSection" class="text-center hidden">
+                        <button id="startGame" class="btn bg-gradient-success hover:opacity-90 px-8 py-3 rounded-lg text-lg font-semibold">
+                            <i class="fas fa-play mr-2"></i>Start Game
+                        </button>
+                    </div>
+
+                    <!-- Game Play Area -->
+                    <div id="gamePlayArea" class="hidden">
+                        <div class="text-center mb-6">
+                            <div class="text-3xl font-bold mb-2" id="puzzleSymbols">🎵 + 🏠 = ?</div>
+                            <div class="text-lg text-gray-300 mb-4">
+                                Difficulty: <span id="difficulty" class="font-semibold">Easy</span> • 
+                                Points: <span id="points" class="font-semibold">10</span>
+                            </div>
+                            <div class="text-2xl font-bold text-red-400 mb-4">
+                                <i class="fas fa-clock mr-2"></i>
+                                <span id="timer">30</span>s
+                            </div>
+                        </div>
+
+                        <div class="max-w-md mx-auto">
+                            <input type="text" id="answerInput" 
+                                   class="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-lg"
+                                   placeholder="Enter your answer">
+                            <button id="submitAnswer" class="w-full btn bg-gradient-success hover:opacity-90 py-3 rounded-lg mt-4 font-semibold">
+                                <i class="fas fa-paper-plane mr-2"></i>Submit Answer
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Game Results -->
+                    <div id="gameResults" class="hidden">
+                        <div class="text-center">
+                            <h3 class="text-2xl font-bold mb-4">Game Results</h3>
+                            <div id="resultsContent"></div>
+                            <button id="playAgain" class="btn bg-gradient-success hover:opacity-90 px-6 py-2 rounded-lg mt-4">
+                                <i class="fas fa-redo mr-2"></i>Play Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // Modern Game State Management
+        class GameState {
+            constructor() {
+                this.user = null;
+                this.socket = null;
+                this.currentRoom = null;
+                this.gameData = {
+                    score: 0,
+                    round: 1,
+                    timeLeft: 30,
+                    isPlaying: false
+                };
+                this.timer = null;
             }
-            
-            socket = io(window.location.origin, {
-                transports: ['websocket'],
-                timeout: 20000,
-                forceNew: true
-            });
-            
-            console.log('Socket created for tab:', TAB_ID, 'Socket ID:', socket.id);
-            
-            // Connection events
-            socket.on('connect', function() {
-                console.log('Connected to game server - Tab:', TAB_ID, 'Socket ID:', socket.id);
-                isConnected = true;
-                showMessage('Connected to game server', 'success');
+
+            setUser(user) {
+                this.user = user;
+                this.updateUserInfo();
+            }
+
+            updateUserInfo() {
+                if (this.user) {
+                    document.getElementById('userInfo').classList.remove('hidden');
+                    document.getElementById('userBalance').textContent = `$${(this.user.balance || 0).toFixed(2)}`;
+                }
+            }
+
+            connectSocket() {
+                if (this.socket) {
+                    this.socket.disconnect();
+                }
                 
-                // Send player name to server
-                socket.emit('register_player', {
-                    name: gameState.playerName
+                this.socket = io(window.location.origin, {
+                    transports: ['websocket'],
+                    timeout: 20000
                 });
-                
-                // Test event listener
-                socket.on('test_event', function(data) {
-                    console.log('Test event received:', data);
-                    showMessage('Test event: ' + data.message, 'success');
+
+                this.setupSocketListeners();
+            }
+
+            setupSocketListeners() {
+                this.socket.on('connect', () => {
+                    console.log('Connected to server');
+                    this.showToast('Connected to game server', 'success');
+                    
+                    if (this.user) {
+                        this.socket.emit('authenticate', { userId: this.user.uid });
+                    }
                 });
+
+                this.socket.on('disconnect', () => {
+                    console.log('Disconnected from server');
+                    this.showToast('Disconnected from server', 'error');
+                });
+
+                this.socket.on('room_created', (data) => {
+                    this.currentRoom = data.roomId;
+                    this.joinRoom(data.room);
+                    this.showToast('Room created successfully!', 'success');
+                });
+
+                this.socket.on('room_joined', (data) => {
+                    this.currentRoom = data.roomId;
+                    this.joinRoom(data.room);
+                    this.showToast('Joined room successfully!', 'success');
+                });
+
+                this.socket.on('room_updated', (room) => {
+                    this.updateRoomInfo(room);
+                });
+
+                this.socket.on('game_started', (gameData) => {
+                    this.startGame(gameData);
+                });
+
+                this.socket.on('question_updated', (question) => {
+                    this.displayQuestion(question);
+                });
+
+                this.socket.on('answer_result', (result) => {
+                    this.handleAnswerResult(result);
+                });
+
+                this.socket.on('game_ended', (results) => {
+                    this.endGame(results);
+                });
+
+                this.socket.on('rooms_list', (rooms) => {
+                    this.displayRooms(rooms);
+                });
+
+                this.socket.on('leaderboard', (players) => {
+                    this.displayLeaderboard(players);
+                });
+
+                this.socket.on('error', (error) => {
+                    this.showToast(error.message, 'error');
+                });
+            }
+
+            showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = `glass rounded-lg p-4 slide-in-up ${this.getToastClass(type)}`;
+                toast.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas ${this.getToastIcon(type)} mr-2"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
                 
-                // Send user ID to server for balance tracking
-                if (currentUser && currentUser.uid) {
-                    socket.emit('set_user_id', { userId: currentUser.uid });
-                    console.log('Sent user ID to server:', currentUser.uid);
+                document.getElementById('toastContainer').appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.remove();
+                }, 5000);
+            }
+
+            getToastClass(type) {
+                const classes = {
+                    success: 'border-green-400 text-green-400',
+                    error: 'border-red-400 text-red-400',
+                    warning: 'border-yellow-400 text-yellow-400',
+                    info: 'border-blue-400 text-blue-400'
+                };
+                return classes[type] || classes.info;
+            }
+
+            getToastIcon(type) {
+                const icons = {
+                    success: 'fa-check-circle',
+                    error: 'fa-exclamation-circle',
+                    warning: 'fa-exclamation-triangle',
+                    info: 'fa-info-circle'
+                };
+                return icons[type] || icons.info;
+            }
+
+            joinRoom(room) {
+                document.getElementById('gameDashboard').classList.add('hidden');
+                document.getElementById('gameRoom').classList.remove('hidden');
+                this.updateRoomInfo(room);
+            }
+
+            updateRoomInfo(room) {
+                document.getElementById('currentRoomName').textContent = room.name;
+                document.getElementById('prizePool').textContent = `$${(room.prizePool / 100).toFixed(2)}`;
+                document.getElementById('playerCount').textContent = `${room.players.length}/${room.maxPlayers}`;
+                document.getElementById('entryFee').textContent = `$${room.entryFee}`;
+                
+                const statusDiv = document.getElementById('roomStatus');
+                const startSection = document.getElementById('startGameSection');
+                
+                if (room.status === 'waiting') {
+                    statusDiv.innerHTML = `<div class="text-lg text-gray-300">Waiting for players... (${room.players.length}/${room.maxPlayers})</div>`;
                     
-                    // Also send a test balance check
-                    setTimeout(() => {
-                        fetch(`/api/user-balance/${currentUser.uid}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                console.log('Balance check after user ID set:', data);
-                            });
-                    }, 1000);
-                }
-                
-                // Send heartbeat every 30 seconds to keep connection alive
-                setInterval(function() {
-                    if (socket && isConnected) {
-                        socket.emit('ping');
-                    }
-                }, 30000);
-            });
-            
-            socket.on('disconnect', function() {
-                console.log('Disconnected from game server');
-                isConnected = false;
-                showMessage('Disconnected from game server', 'error');
-            });
-            
-            socket.on('connect_error', function(error) {
-                console.error('Connection error:', error);
-                isConnected = false;
-                showMessage('Connection error. Please refresh the page.', 'error');
-            });
-            
-            socket.on('reconnect', function() {
-                console.log('Reconnected to server');
-                isConnected = true;
-                showMessage('Reconnected to server', 'success');
-                // Rejoin room if we were in one
-                if (gameState.currentRoom) {
-                    socket.emit('join_room', { roomId: gameState.currentRoom });
-                }
-            });
-            
-            socket.on('reconnect_error', function(error) {
-                console.error('Reconnection error:', error);
-                showMessage('Reconnection failed. Please refresh the page.', 'error');
-            });
-            
-            // Game events
-            socket.on('room_created', function(data) {
-                gameState.currentRoom = data.roomId;
-                joinGameRoom(data.roomId, data.room.name);
-                showMessage('Room created successfully!', 'success');
-            });
-            
-            socket.on('room_joined', function(data) {
-                gameState.currentRoom = data.roomId;
-                joinGameRoom(data.roomId, data.room.name);
-                showMessage('Joined room successfully!', 'success');
-            });
-            
-            socket.on('room_updated', function(roomData) {
-                updateGameStatus(roomData);
-            });
-            
-            socket.on('game_started', function(gameData) {
-                startGameFromServer(gameData);
-            });
-            
-            socket.on('question_updated', function(questionData) {
-                displayQuestion(questionData);
-            });
-            
-            socket.on('player_answered', function(answerData) {
-                console.log('Player answered event:', answerData);
-                handlePlayerAnswer(answerData);
-                
-                // If this is the current player's answer, show immediate feedback
-                if (answerData.playerName === gameState.playerName) {
-                    var message = '';
-                    if (answerData.correct) {
-                        message = '✅ Correct! +' + answerData.points + ' points';
+                    if (room.players.length >= 2 && room.hostId === this.socket.id) {
+                        startSection.classList.remove('hidden');
                     } else {
-                        message = '❌ Incorrect! The answer was: ' + answerData.correctAnswer;
+                        startSection.classList.add('hidden');
                     }
-                    showMessage(message, answerData.correct ? 'success' : 'error');
+                } else if (room.status === 'playing') {
+                    statusDiv.innerHTML = `<div class="text-lg text-green-400">Game in progress!</div>`;
+                    startSection.classList.add('hidden');
+                }
+            }
+
+            startGame(gameData) {
+                document.getElementById('gamePlayArea').classList.remove('hidden');
+                this.gameData.isPlaying = true;
+                this.gameData.score = 0;
+                this.gameData.round = 1;
+            }
+
+            displayQuestion(question) {
+                document.getElementById('puzzleSymbols').textContent = `${question.symbols} = ?`;
+                document.getElementById('difficulty').textContent = question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1);
+                document.getElementById('points').textContent = question.points;
+                document.getElementById('answerInput').value = '';
+                document.getElementById('answerInput').disabled = false;
+                document.getElementById('submitAnswer').disabled = false;
+                
+                this.gameData.timeLeft = question.timeLimit || 30;
+                this.startTimer();
+            }
+
+            startTimer() {
+                if (this.timer) {
+                    clearInterval(this.timer);
+                }
+                
+                this.timer = setInterval(() => {
+                    this.gameData.timeLeft--;
+                    document.getElementById('timer').textContent = this.gameData.timeLeft;
                     
-                    // Update score if correct
-                    if (answerData.correct) {
-                        gameState.score += answerData.points;
+                    if (this.gameData.timeLeft <= 0) {
+                        clearInterval(this.timer);
+                        this.timeUp();
                     }
-                } else {
-                    // Show other players' answers
-                    var otherMessage = answerData.playerName + ' answered';
-                    if (answerData.correct) {
-                        otherMessage += ' correctly! +' + answerData.points + ' points';
-                    } else {
-                        otherMessage += ' incorrectly';
-                    }
-                    showMessage(otherMessage, answerData.correct ? 'success' : 'error');
+                }, 1000);
+            }
+
+            timeUp() {
+                document.getElementById('answerInput').disabled = true;
+                document.getElementById('submitAnswer').disabled = true;
+                this.showToast("Time's up!", 'warning');
+                
+                if (this.socket && this.currentRoom) {
+                    this.socket.emit('time_up', { roomId: this.currentRoom });
                 }
-            });
-            
-            // Direct answer result event
-            socket.on('answer_result', function(result) {
-                console.log('Direct answer result:', result);
-                
-                // Reset submit button to normal state
-                var submitBtn = document.querySelector('button[onclick="submitAnswer()"]');
-                submitBtn.innerHTML = 'Submit Answer';
-                submitBtn.style.backgroundColor = '';
-                submitBtn.style.cursor = '';
-                
-                // Remove pulse animation
-                var puzzleArea = document.getElementById('puzzle-area');
-                puzzleArea.style.animation = '';
-                
-                var message = '';
-                var messageType = '';
-                
+            }
+
+            handleAnswerResult(result) {
                 if (result.correct) {
-                    message = '🎉 <strong>CORRECT!</strong> 🎉<br/>+' + result.points + ' points<br/>Your answer: "' + result.yourAnswer + '"<br/>Attempts: ' + result.attempts;
-                    messageType = 'success';
-                    
-                    // Add celebration effect
-                    addCelebrationEffect();
-                    
-                    // Update score display immediately
-                    gameState.score += result.points;
-                    updateScoreDisplay();
-                    
-                    // Disable input and button since they got it right
+                    this.gameData.score += result.points;
+                    this.showToast(`Correct! +${result.points} points`, 'success');
                     document.getElementById('answerInput').disabled = true;
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '✅ Got it!';
-                    
+                    document.getElementById('submitAnswer').disabled = true;
                 } else {
-                    message = '❌ <strong>TRY AGAIN!</strong> ❌<br/>Your answer: "' + result.yourAnswer + '"<br/>Attempts: ' + result.attempts + '<br/>Keep trying!';
-                    messageType = 'error';
-                    
-                    // Add shake effect for wrong answer
-                    addShakeEffect();
-                    
-                    // Re-enable input for another attempt
-                    document.getElementById('answerInput').disabled = false;
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = 'Submit Answer';
-                    submitBtn.style.backgroundColor = '';
-                    submitBtn.style.cursor = '';
+                    this.showToast('Try again!', 'error');
                     document.getElementById('answerInput').value = '';
                     document.getElementById('answerInput').focus();
-                    
-                    console.log('Re-enabled submit button for retry');
-                }
-                
-                showEnhancedMessage(message, messageType);
-                
-                // Show different follow-up messages based on attempts
-                setTimeout(function() {
-                    if (result.correct) {
-                        showEnhancedMessage('💡 Great job! You earned ' + result.points + ' points!', 'success');
-                    } else {
-                        showEnhancedMessage('💭 Keep trying! You have until the timer runs out.', 'info');
-                    }
-                }, 2000);
-            });
-            
-            socket.on('game_ended', function(results) {
-                endGameFromServer(results);
-            });
-            
-            socket.on('room_ready_for_next_game', function(data) {
-                console.log('Room ready for next game:', data);
-                showEnhancedMessage('🎮 ' + data.message, 'info');
-                
-                // Show start game button again
-                document.getElementById('startGameButton').classList.remove('hidden');
-                document.getElementById('puzzle-area').classList.add('hidden');
-            });
-            
-            socket.on('error', function(error) {
-                console.error('Socket error:', error);
-                showMessage('Game error: ' + error.message, 'error');
-            });
-            
-            socket.on('rooms_list', function(rooms) {
-                displayRoomsList(rooms);
-            });
-            
-            // Handle balance updates
-            socket.on('balance_updated', function(data) {
-                document.getElementById('balance').textContent = data.newBalance.toFixed(2);
-                gameState.balance = data.newBalance; // Update game state
-                showMessage(data.message, 'info');
-            });
-            
-            // Handle game end with payouts
-            socket.on('game_ended', function(results) {
-                console.log('Game ended with results:', results);
-                
-            // Update balance if user won
-            if (results.payoutResults && results.payoutResults.payouts) {
-                const userPayout = results.payoutResults.payouts.find(p => p.userId === currentUser.uid);
-                console.log('Looking for payout for user:', currentUser.uid);
-                console.log('Available payouts:', results.payoutResults.payouts);
-                
-                if (userPayout && userPayout.status === 'success') {
-                    document.getElementById('balance').textContent = userPayout.newBalance.toFixed(2);
-                    gameState.balance = userPayout.newBalance; // Update game state
-                    showMessage(`🎉 You won $${userPayout.amount.toFixed(2)}! New balance: $${userPayout.newBalance.toFixed(2)}`, 'success');
-                } else if (userPayout && userPayout.status === 'error') {
-                    showMessage(`❌ Payout error: ${userPayout.error}`, 'error');
-                } else {
-                    // User didn't win
-                    showMessage(`Better luck next time! The winner was ${results.winner}`, 'info');
-                }
-            } else {
-                console.log('No payout results found');
-            }
-                
-                // Show game results
-                showGameResults(results);
-            });
-        }
-        
-        // Firebase Authentication
-
-        // Initialize Stripe
-        function initializeStripe() {
-            try {
-                // Get Stripe key from environment or use test key for development
-                const stripeKey = window.STRIPE_PUBLISHABLE_KEY || 'pk_test_your_test_key_here';
-                stripe = Stripe(stripeKey);
-                console.log('Stripe initialized successfully');
-            } catch (error) {
-                console.error('Stripe initialization error:', error);
-            }
-        }
-
-        // Payment processing
-        async function processPayment(amount, gameId) {
-            if (!stripe) {
-                showMessage('Payment system not available', 'error');
-                return false;
-            }
-
-            try {
-                showMessage('Processing payment...', 'info');
-                console.log('Starting payment process for amount:', amount, 'gameId:', gameId);
-                
-                // Create payment intent
-                const response = await fetch('/api/create-payment-intent', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        amount: amount * 100, // Convert to cents
-                        currency: 'usd',
-                        gameId: gameId
-                    })
-                });
-
-                const { clientSecret, paymentIntentId } = await response.json();
-                console.log('Payment intent created, clientSecret:', clientSecret, 'paymentIntentId:', paymentIntentId);
-
-                if (!clientSecret) {
-                    throw new Error('Failed to create payment intent');
-                }
-
-                // Confirm payment
-                const { error, paymentIntent } = await stripe.confirmPayment({
-                    clientSecret,
-                    confirmParams: {
-                        return_url: window.location.href,
-                    },
-                });
-
-                if (error) {
-                    console.error('Payment failed:', error);
-                    showMessage('Payment failed: ' + error.message, 'error');
-                    return false;
-                }
-
-                console.log('Payment result:', paymentIntent);
-
-                if (paymentIntent.status === 'succeeded') {
-                    // Add balance to user account
-                    try {
-                        console.log('Adding balance to user account:', currentUser.uid, 'amount:', amount * 100);
-                        const addBalanceResponse = await fetch('/api/add-balance', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                userId: currentUser.uid,
-                                amount: amount * 100 // Convert to cents
-                            })
-                        });
-                        
-                        const balanceData = await addBalanceResponse.json();
-                        console.log('Add balance response:', balanceData);
-                        if (balanceData.success) {
-                            showMessage('Payment successful! Balance added to your account!', 'success');
-                    return true;
-                        } else {
-                            console.error('Failed to add balance:', balanceData);
-                            showMessage('Payment succeeded but failed to add balance', 'error');
-                            return false;
-                        }
-                    } catch (error) {
-                        console.error('Error adding balance:', error);
-                        showMessage('Payment succeeded but failed to add balance', 'error');
-                        return false;
-                    }
-                } else {
-                    showMessage('Payment not completed', 'error');
-                    return false;
-                }
-            } catch (error) {
-                console.error('Payment error:', error);
-                showMessage('Payment error: ' + error.message, 'error');
-                return false;
-            }
-        }
-
-        // Global Firebase variables
-        let auth = null;
-        let db = null;
-        let currentUser = null;
-        let signInWithEmailAndPassword = null;
-        let createUserWithEmailAndPassword = null;
-        let onAuthStateChanged = null;
-
-        // Initialize Firebase
-        async function initializeFirebase() {
-            try {
-                // Import Firebase modules
-                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-                const authModule = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
-                const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-
-                // Make auth functions globally available
-                signInWithEmailAndPassword = authModule.signInWithEmailAndPassword;
-                createUserWithEmailAndPassword = authModule.createUserWithEmailAndPassword;
-                onAuthStateChanged = authModule.onAuthStateChanged;
-
-                const firebaseConfig = {
-                    apiKey: "AIzaSyCRovI9X-IWPYVtJAauHsvvE0XhHkJ8NEA",
-                    authDomain: "symbol-duel.firebaseapp.com",
-                    projectId: "symbol-duel",
-                    storageBucket: "symbol-duel.firebasestorage.app",
-                    messagingSenderId: "115651908526",
-                    appId: "1:115651908526:web:d0425e58de0991a38fee3f",
-                    measurementId: "G-BNTRQY9YVY"
-                };
-
-                const app = initializeApp(firebaseConfig);
-                auth = authModule.getAuth(app);
-                db = getFirestore(app);
-
-                // Listen for auth state changes
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        currentUser = user;
-                        console.log('User signed in:', user.email);
-                        showGameArea();
-                    } else {
-                        currentUser = null;
-                        console.log('User signed out');
-                        showLoginForm();
-                    }
-                });
-
-                console.log('Firebase initialized successfully');
-            } catch (error) {
-                console.error('Firebase initialization error:', error);
-                showMessage('Firebase initialization failed. Using demo mode.', 'error');
-            }
-        }
-
-        // Authentication handler
-        async function handleAuth() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-            
-            if (!email || !password) {
-                showMessage('Please enter both email and password', 'error');
-                return;
-            }
-
-            if (!auth || !signInWithEmailAndPassword || !createUserWithEmailAndPassword) {
-                showMessage('Firebase not initialized. Using demo mode.', 'error');
-                showGameArea();
-                return;
-            }
-
-            try {
-                showMessage('Signing in...', 'info');
-                
-                // Try to sign in first
-                try {
-                    await signInWithEmailAndPassword(auth, email, password);
-                    showMessage('Welcome back!', 'success');
-                } catch (signInError) {
-                    // If sign in fails, try to create new user
-                    if (signInError.code === 'auth/user-not-found') {
-                        try {
-                            await createUserWithEmailAndPassword(auth, email, password);
-                            showMessage('Account created successfully!', 'success');
-                        } catch (createError) {
-                            throw createError;
-                        }
-                    } else {
-                        throw signInError;
-                    }
-                }
-            } catch (error) {
-                console.error('Authentication error:', error);
-                let errorMessage = 'Authentication failed';
-                
-                switch (error.code) {
-                    case 'auth/weak-password':
-                        errorMessage = 'Password should be at least 6 characters';
-                        break;
-                    case 'auth/invalid-email':
-                        errorMessage = 'Invalid email address';
-                        break;
-                    case 'auth/email-already-in-use':
-                        errorMessage = 'Email already in use';
-                        break;
-                    case 'auth/wrong-password':
-                        errorMessage = 'Wrong password';
-                        break;
-                    case 'auth/user-not-found':
-                        errorMessage = 'User not found';
-                        break;
-                }
-                
-                showMessage(errorMessage, 'error');
-        }
-        }
-        
-        function logout() {
-            if (auth && currentUser) {
-                auth.signOut().then(() => {
-                    showMessage('Logged out successfully', 'success');
-                }).catch((error) => {
-                    console.error('Logout error:', error);
-                    showMessage('Logout failed', 'error');
-                });
-            } else {
-                showMessage('Logged out successfully', 'success');
-                showLoginForm();
-            }
-        }
-        
-        function showMessage(message, type) {
-            var messageDiv = document.getElementById('message');
-            messageDiv.textContent = message;
-            messageDiv.className = type;
-        }
-        
-        function showEnhancedMessage(message, type) {
-            var messageDiv = document.getElementById('message');
-            messageDiv.innerHTML = message;
-            messageDiv.className = type;
-            
-            // Add enhanced styling based on type
-            switch(type) {
-                case 'success':
-                    messageDiv.style.backgroundColor = '#10b981';
-                    messageDiv.style.color = 'white';
-                    messageDiv.style.border = '2px solid #059669';
-                    messageDiv.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
-                    break;
-                case 'error':
-                    messageDiv.style.backgroundColor = '#ef4444';
-                    messageDiv.style.color = 'white';
-                    messageDiv.style.border = '2px solid #dc2626';
-                    messageDiv.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
-                    break;
-                case 'info':
-                    messageDiv.style.backgroundColor = '#3b82f6';
-                    messageDiv.style.color = 'white';
-                    messageDiv.style.border = '2px solid #2563eb';
-                    messageDiv.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-                    break;
-            }
-            
-            // Auto-hide after 3 seconds for info messages
-            if (type === 'info') {
-                setTimeout(function() {
-                    messageDiv.style.backgroundColor = '';
-                    messageDiv.style.color = '';
-                    messageDiv.style.border = '';
-                    messageDiv.style.boxShadow = '';
-                }, 3000);
-            }
-        }
-        
-        function addCelebrationEffect() {
-            var puzzleArea = document.getElementById('puzzle-area');
-            puzzleArea.style.animation = 'celebration 0.6s ease-in-out';
-            
-            // Add confetti effect (simple version)
-            createConfetti();
-            
-            setTimeout(function() {
-                puzzleArea.style.animation = '';
-            }, 600);
-        }
-        
-        function addShakeEffect() {
-            var puzzleArea = document.getElementById('puzzle-area');
-            puzzleArea.style.animation = 'shake 0.5s ease-in-out';
-            
-            setTimeout(function() {
-                puzzleArea.style.animation = '';
-            }, 500);
-        }
-        
-        function createConfetti() {
-            var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'];
-            var confettiCount = 20;
-            
-            for (var i = 0; i < confettiCount; i++) {
-                var confetti = document.createElement('div');
-                confetti.style.position = 'absolute';
-                confetti.style.width = '10px';
-                confetti.style.height = '10px';
-                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.left = Math.random() * window.innerWidth + 'px';
-                confetti.style.top = '-10px';
-                confetti.style.borderRadius = '50%';
-                confetti.style.pointerEvents = 'none';
-                confetti.style.zIndex = '1000';
-                confetti.style.animation = 'confettiFall 2s linear forwards';
-                
-                document.body.appendChild(confetti);
-                
-                setTimeout(function() {
-                    confetti.remove();
-                }, 2000);
-            }
-        }
-        
-        function updateScoreDisplay() {
-            // Update any score display elements if they exist
-            var scoreElements = document.querySelectorAll('.score-display, #currentScore');
-            scoreElements.forEach(function(element) {
-                element.textContent = gameState.score;
-            });
-        }
-        
-        function showGameArea() {
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('gameArea').classList.remove('hidden');
-            initializeSocket();
-            loadUserBalance();
-            
-            // Send user ID to server after authentication
-            if (currentUser && currentUser.uid && socket) {
-                socket.emit('set_user_id', { userId: currentUser.uid });
-                console.log('Sent user ID to server after auth - Tab:', TAB_ID, 'User ID:', currentUser.uid, 'Socket ID:', socket.id);
-            }
-        }
-        
-        async function loadUserBalance() {
-            if (currentUser) {
-                try {
-                    const response = await fetch(`/api/user-balance/${currentUser.uid}`);
-                    const data = await response.json();
-                    document.getElementById('balance').textContent = data.balance.toFixed(2);
-                    gameState.balance = data.balance; // Update game state
-                    console.log('Loaded balance from server:', data.balance);
-                    
-                    // If balance is 0 but we expect it to be higher, try to set user ID again
-                    if (data.balance === 0 && socket && isConnected) {
-                        console.log('Balance is 0, sending user ID again...');
-                        socket.emit('set_user_id', { userId: currentUser.uid });
-                    }
-                } catch (error) {
-                    console.error('Error loading balance:', error);
-                    document.getElementById('balance').textContent = '0.00';
-                    gameState.balance = 0;
                 }
             }
-        }
-        
-        function showLoginForm() {
-            document.getElementById('gameArea').classList.add('hidden');
-            document.getElementById('loginForm').classList.remove('hidden');
-            if (socket) {
-                socket.disconnect();
-                socket = null;
-                isConnected = false;
-            }
-        }
-        
-        function showGameMenu() {
-            hideAllScreens();
-            document.getElementById('gameMenu').classList.remove('hidden');
-            gameState.gamePhase = 'menu';
-        }
-        
-        function showCreateRoom() {
-            hideAllScreens();
-            document.getElementById('createRoom').classList.remove('hidden');
-        }
-        
-        function validateEntryFee() {
-            const entryFeeInput = document.getElementById('entryFee');
-            const errorDiv = document.getElementById('entryFeeError');
-            const value = parseFloat(entryFeeInput.value);
-            
-            if (isNaN(value) || value < 1 || value > 200) {
-                entryFeeInput.style.borderColor = '#ff6b6b';
-                errorDiv.style.display = 'block';
-                return false;
-            } else {
-                entryFeeInput.style.borderColor = '';
-                errorDiv.style.display = 'none';
-                return true;
-            }
-        }
-        
-        function showJoinRoom() {
-            hideAllScreens();
-            document.getElementById('joinRoom').classList.remove('hidden');
-            loadAvailableRooms();
-        }
-        
-        function showLeaderboard() {
-            hideAllScreens();
-            document.getElementById('leaderboard').classList.remove('hidden');
-            loadLeaderboard();
-        }
-        
-        function loadLeaderboard() {
-            // Fetch leaderboard data from API
-            fetch('/api/leaderboard')
-                .then(response => response.json())
-                .then(data => {
-                    displayLeaderboard(data);
-                })
-                .catch(error => {
-                    console.error('Error loading leaderboard:', error);
-                    displayLeaderboard([]);
-                });
-        }
-        
-        function displayLeaderboard(players) {
-            var leaderboard = document.getElementById('leaderboardList');
-            leaderboard.innerHTML = '';
-            
-            if (players.length === 0) {
-                leaderboard.innerHTML = '<div style="text-align: center; padding: 20px; color: #ccc;">No players yet! Be the first to play!</div>';
-                return;
-            }
-            
-            players.forEach(function(player, index) {
-                var item = document.createElement('div');
-                item.className = 'leaderboard-item';
-                var medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1) + '.';
-                
-                item.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center;">' +
-                    '<div>' +
-                        '<span style="font-size: 1.2rem;">' + medal + '</span> ' +
-                        '<strong>' + player.name + '</strong><br>' +
-                        '<small style="color: #ccc;">Win Rate: ' + player.winRate.toFixed(1) + '% | Games: ' + player.gamesPlayed + '</small>' +
-                    '</div>' +
-                    '<div style="text-align: right;">' +
-                        '<div style="color: #4ade80; font-weight: bold;">$' + player.totalWinnings.toFixed(2) + '</div>' +
-                        '<small style="color: #ccc;">Net: $' + (player.totalWinnings - player.totalSpent).toFixed(2) + '</small>' +
-                    '</div>' +
-                '</div>';
-                
-                leaderboard.appendChild(item);
-            });
-        }
-        
-        function showAddFunds() {
-            hideAllScreens();
-            document.getElementById('addFunds').classList.remove('hidden');
-        }
-        
-        async function addFunds() {
-            const amount = parseFloat(document.getElementById('amount').value);
-            
-            if (!amount || amount < 10) {
-                showMessage('Please enter a valid amount (minimum $10)', 'error');
-                return;
-            }
-            
-            // For testing: Add fake funds directly to server
-            if (currentUser && currentUser.uid) {
-                try {
-                    console.log('Adding fake funds to server:', currentUser.uid, 'amount:', amount * 100);
-                    const response = await fetch('/api/add-balance', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            userId: currentUser.uid,
-                            amount: amount * 100 // Convert to cents
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    console.log('Add balance response:', data);
-                    
-                    if (data.success) {
-                showMessage(`Successfully added $${amount} to your account!`, 'success');
-                        loadUserBalance(); // Refresh balance display
-                showGameMenu();
-                    } else {
-                        showMessage('Failed to add funds', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error adding funds:', error);
-                    showMessage('Failed to add funds', 'error');
+
+            endGame(results) {
+                if (this.timer) {
+                    clearInterval(this.timer);
                 }
-            } else {
-                showMessage('User not authenticated', 'error');
-            }
-        }
-        
-        function hideAllScreens() {
-            var screens = ['gameMenu', 'createRoom', 'joinRoom', 'gameRoom', 'leaderboard', 'gameStats', 'addFunds'];
-            screens.forEach(function(screen) {
-                document.getElementById(screen).classList.add('hidden');
-            });
-        }
-        
-        function showGameResults(results) {
-            // Create results display
-            let resultsHtml = `
-                <div class="game-results">
-                    <h2>🎉 Game Results</h2>
-                    <div class="winner">
-                        <h3>Winner: ${results.winner}</h3>
-                        <p>Final Score: ${results.finalScores[Object.keys(results.finalScores)[0]]}</p>
+                
+                document.getElementById('gamePlayArea').classList.add('hidden');
+                document.getElementById('gameResults').classList.remove('hidden');
+                
+                const resultsContent = document.getElementById('resultsContent');
+                resultsContent.innerHTML = `
+                    <div class="text-center">
+                        <h4 class="text-xl font-bold mb-4">Winner: ${results.winner}</h4>
+                        <div class="text-lg text-gray-300 mb-4">Final Score: ${results.finalScores[Object.keys(results.finalScores)[0]]}</div>
+                        <div class="text-green-400 font-bold text-lg">Prize: $${results.payoutResults.payouts[0]?.amount?.toFixed(2) || 0}</div>
                     </div>
-                    <div class="payouts">
-                        <h4>💰 Payouts</h4>
-                        <div class="payout-list">
-            `;
-            
-            if (results.payoutResults && results.payoutResults.payouts) {
-                results.payoutResults.payouts.forEach(payout => {
-                    resultsHtml += `
-                        <div class="payout-item ${payout.status === 'success' ? 'success' : 'error'}">
-                            <span class="position">#${payout.position + 1}</span>
-                            <span class="player">${payout.playerName}</span>
-                            <span class="amount">$${payout.amount.toFixed(2)}</span>
-                            ${payout.status === 'success' ? '✅' : '❌'}
-                        </div>
-                    `;
-                });
-            }
-            
-            resultsHtml += `
-                        </div>
-                    </div>
-                    <div class="game-summary">
-                        <p><strong>Total Pot:</strong> $${results.totalPot.toFixed(2)}</p>
-                        <p><strong>House Take:</strong> $${results.houseTake.toFixed(2)}</p>
-                        <p><strong>Player Pot:</strong> $${results.playerPot.toFixed(2)}</p>
-                    </div>
-                    <button class="game-btn primary" onclick="showGameMenu()">Back to Menu</button>
-                </div>
-            `;
-            
-            // Show results in a modal or replace game room content
-            document.getElementById('gameRoom').innerHTML = resultsHtml;
-            document.getElementById('gameRoom').classList.remove('hidden');
-        }
-        
-        function loadStats() {
-            hideAllScreens();
-            document.getElementById('gameStats').classList.remove('hidden');
-            
-            // Fetch game statistics from API
-            fetch('/api/stats')
-                .then(response => response.json())
-                .then(data => {
-                    displayStats(data);
-                })
-                .catch(error => {
-                    console.error('Error loading stats:', error);
-                    displayStats({});
-                });
-        }
-        
-        function displayStats(stats) {
-            var statsList = document.getElementById('statsList');
-            statsList.innerHTML = '';
-            
-            var statsItems = [
-                { label: 'Total Games Played', value: stats.totalGames || 0, icon: '🎮' },
-                { label: 'Total Players', value: stats.totalPlayers || 0, icon: '👥' },
-                { label: 'Total Volume', value: '$' + (stats.totalVolume || 0).toFixed(2), icon: '💰' },
-                { label: 'Average Game Size', value: (stats.averageGameSize || 0).toFixed(1) + ' players', icon: '📊' },
-                { label: 'House Edge', value: '6%', icon: '🏠' },
-                { label: 'Player Payout Rate', value: '94%', icon: '🎯' }
-            ];
-            
-            statsItems.forEach(function(item) {
-                var statItem = document.createElement('div');
-                statItem.className = 'leaderboard-item';
-                statItem.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center;">' +
-                    '<div>' +
-                        '<span style="font-size: 1.2rem;">' + item.icon + '</span> ' +
-                        '<strong>' + item.label + '</strong>' +
-                    '</div>' +
-                    '<div style="color: #4ade80; font-weight: bold; font-size: 1.1rem;">' + item.value + '</div>' +
-                '</div>';
+                `;
                 
-                statsList.appendChild(statItem);
-            });
-        }
-        
-        function createRoom() {
-            var roomName = document.getElementById('roomName').value.trim();
-            var entryFee = parseInt(document.getElementById('entryFee').value);
-            
-            console.log('Creating room:', roomName, 'Entry fee:', entryFee, 'Balance:', gameState.balance);
-            console.log('Socket connected:', isConnected, 'Socket object:', socket);
-            
-            if (!roomName || !entryFee) {
-                showMessage('Please enter room name and entry fee', 'error');
-                return;
+                this.gameData.isPlaying = false;
             }
-            
-            // Validate entry fee with visual feedback
-            if (!validateEntryFee()) {
-                showMessage('Entry fee must be between $1 and $200', 'error');
-                return;
-            }
-            
-            // Check if player has enough balance
-            if (gameState.balance < entryFee) {
-                showMessage(`Insufficient balance. Need $${entryFee}, have $${gameState.balance.toFixed(2)}`, 'error');
-                return;
-            }
-            
-            // Store entry fee for this game
-            gameState.currentEntryFee = entryFee;
-            
-            if (!isConnected || !socket) {
-                showMessage('Not connected to server. Please refresh the page.', 'error');
-                return;
-            }
-            
-            console.log('Creating room - Tab:', TAB_ID, 'User ID:', currentUser.uid, 'Socket ID:', socket.id, 'Room:', roomName, 'Entry Fee:', entryFee);
-            
-            // Add tab ID to room name to ensure uniqueness
-            const uniqueRoomName = roomName + ' (' + TAB_ID.substring(0, 8) + ')';
-            
-            socket.emit('create_room', {
-                roomName: uniqueRoomName,
-                entryFee: entryFee
-            });
-            
-            // Listen for room_created response
-            socket.once('room_created', function(data) {
-                console.log('Room created successfully:', data);
-                showGameRoom(data.room);
-            });
-            
-            // Listen for errors
-            socket.once('error', function(error) {
-                console.error('Room creation error:', error);
-                showMessage(error.message || 'Failed to create room', 'error');
-            });
-        }
-        
-        function joinRoom(roomId) {
-            if (!isConnected || !socket) {
-                showMessage('Not connected to server. Please refresh the page.', 'error');
-                return;
-            }
-            
-            // Find the room to get entry fee
-            var roomElement = document.querySelector('[data-room-id="' + roomId + '"]');
-            if (roomElement) {
-                var entryFeeText = roomElement.querySelector('.room-entry-fee').textContent;
-                var entryFee = parseInt(entryFeeText.replace('$', ''));
+
+            displayRooms(rooms) {
+                const container = document.getElementById('availableRooms');
                 
-                // Check if player has enough balance
-                if (gameState.balance < entryFee) {
-                    showMessage('Insufficient balance. Please add funds.', 'error');
+                if (rooms.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-300 py-4">No rooms available</div>';
                     return;
                 }
                 
-                // Store entry fee for this game
-                gameState.currentEntryFee = entryFee;
+                container.innerHTML = rooms.map(room => `
+                    <div class="glass rounded-lg p-4 cursor-pointer hover:bg-white hover:bg-opacity-10 transition-all" 
+                         onclick="gameState.joinRoomById('${room.id}')">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="font-semibold">${room.name}</div>
+                                <div class="text-sm text-gray-300">${room.playerCount}/${room.maxPlayers} players</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-bold text-green-400">$${room.entryFee}</div>
+                                <div class="text-sm text-gray-300">entry fee</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
             }
-            
-            console.log('Joining room - Tab:', TAB_ID, 'User ID:', currentUser.uid, 'Socket ID:', socket.id, 'Room ID:', roomId);
-            
-            socket.emit('join_room', {
-                roomId: roomId
-            });
+
+            displayLeaderboard(players) {
+                const container = document.getElementById('leaderboard');
+                
+                if (players.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-300 py-4">No players yet</div>';
+                    return;
+                }
+                
+                container.innerHTML = players.map((player, index) => `
+                    <div class="flex justify-between items-center p-3 glass rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-gradient-success rounded-full flex items-center justify-center mr-3">
+                                <span class="text-sm font-bold">${index + 1}</span>
+                            </div>
+                            <div>
+                                <div class="font-semibold">${player.name}</div>
+                                <div class="text-sm text-gray-300">${player.winRate.toFixed(1)}% win rate</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-green-400">$${player.totalWinnings.toFixed(2)}</div>
+                            <div class="text-sm text-gray-300">${player.gamesPlayed} games</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            joinRoomById(roomId) {
+                if (this.socket) {
+                    this.socket.emit('join_room', { roomId });
+                }
+            }
         }
-        
-        function joinGameRoom(roomId, roomName) {
-            hideAllScreens();
-            document.getElementById('gameRoom').classList.remove('hidden');
-            document.getElementById('currentRoomName').textContent = roomName;
-            gameState.gamePhase = 'waiting';
-        }
-        
-        function showGameRoom(room) {
-            hideAllScreens();
-            document.getElementById('gameRoom').classList.remove('hidden');
-            document.getElementById('currentRoomName').textContent = room.name;
-            gameState.gamePhase = 'waiting';
-            gameState.currentRoom = room.id;
-            updateGameStatus(room);
-        }
-        
-        function updateGameStatus(room) {
-            var statusDiv = document.getElementById('gameStatus');
-            var startButton = document.getElementById('startGameButton');
-            var statusText = '';
-            
-            // Update room info
-            document.getElementById('roomEntryFee').textContent = room.entryFee || 10;
-            document.getElementById('roomPlayerCount').textContent = room.players ? room.players.length : 1;
-            document.getElementById('roomPrizePool').textContent = ((room.prizePool || 0) / 100).toFixed(2);
-            
-            if (room.status === 'waiting') {
-                var playerCount = room.players ? room.players.length : 1;
-                statusText = 'Waiting for players... (' + playerCount + '/' + room.maxPlayers + ')';
-                if (playerCount >= 2) {
-                    statusText += ' - Ready to start!';
-                    // Show start button only for host
-                    console.log('Debug - Host ID:', room.hostId, 'Socket ID:', socket.id, 'Is Host:', room.hostId === socket.id);
-                    if (room.hostId === socket.id) {
-                        startButton.classList.remove('hidden');
-                        console.log('Start button should be visible now');
+
+        // Initialize game state
+        const gameState = new GameState();
+
+        // Authentication
+        async function handleLogin(email, password) {
+            try {
+                const { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = window.firebase;
+                
+                let userCredential;
+                try {
+                    userCredential = await signInWithEmailAndPassword(auth, email, password);
+                } catch (error) {
+                    if (error.code === 'auth/user-not-found') {
+                        userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     } else {
-                        startButton.classList.add('hidden');
-                        console.log('Not the host, hiding start button');
-                    }
-                } else {
-                    startButton.classList.add('hidden');
-                }
-            } else if (room.status === 'playing') {
-                statusText = 'Round ' + room.currentRound + '/' + room.totalRounds + ' - Players: ' + room.playerNames.join(', ');
-                startButton.classList.add('hidden');
-            } else if (room.status === 'finished') {
-                statusText = 'Game finished! Winner: ' + (room.winner || 'Tie');
-                startButton.classList.add('hidden');
-            }
-            
-            statusDiv.textContent = statusText;
-        }
-        
-        function startGameManually() {
-            if (!isConnected || !socket) {
-                showMessage('Not connected to server. Please refresh the page.', 'error');
-                return;
-            }
-            
-            console.log('Attempting to start game for room:', gameState.currentRoom);
-            socket.emit('start_game', {
-                roomId: gameState.currentRoom
-            });
-        }
-        
-        function startGameFromServer(gameData) {
-            console.log('Game started from server:', gameData);
-            gameState.gamePhase = 'playing';
-            gameState.round = 1;
-            gameState.score = 0;
-            
-            // Hide start button
-            document.getElementById('startGameButton').classList.add('hidden');
-            
-            // Show puzzle area
-            document.getElementById('puzzle-area').classList.remove('hidden');
-        }
-        
-        function displayQuestion(questionData) {
-            console.log('Displaying question:', questionData);
-            currentPuzzle = questionData;
-            document.getElementById('puzzleSymbols').textContent = questionData.symbols + ' = ?';
-            document.getElementById('answerInput').value = '';
-            
-            // Re-enable input and button for new round
-            var answerInput = document.getElementById('answerInput');
-            var submitBtn = document.querySelector('button[onclick="submitAnswer()"]');
-            
-            answerInput.disabled = false;
-            submitBtn.disabled = false;
-            
-            // Reset button appearance
-            submitBtn.innerHTML = 'Submit Answer';
-            submitBtn.style.backgroundColor = '';
-            submitBtn.style.cursor = '';
-            
-            // Clear any previous animations
-            var puzzleArea = document.getElementById('puzzle-area');
-            puzzleArea.style.animation = '';
-            
-            // Update difficulty and points display
-            document.getElementById('currentDifficulty').textContent = questionData.difficulty.charAt(0).toUpperCase() + questionData.difficulty.slice(1);
-            document.getElementById('currentPoints').textContent = questionData.points;
-            
-            // Show new question message
-            showEnhancedMessage('🎯 New puzzle! Good luck!', 'info');
-            
-            // Update round counter
-            document.getElementById('currentRound').textContent = questionData.round || 1;
-            
-            // Reset and start timer with server's time limit
-            clearInterval(gameTimer);
-            gameTimer = null;
-            gameState.timeLeft = questionData.timeLimit || 30;
-            document.getElementById('timer').textContent = gameState.timeLeft;
-            startGameTimer();
-        }
-        
-        function handlePlayerAnswer(answerData) {
-            console.log('Player answered:', answerData);
-            // Update UI to show other players' answers
-            var message = answerData.playerName + ' answered';
-            if (answerData.correct) {
-                message += ' correctly! +' + answerData.points + ' points';
-                showMessage(message, 'success');
-            } else {
-                message += ' incorrectly';
-                showMessage(message, 'error');
-            }
-        }
-        
-        function endGameFromServer(results) {
-            clearInterval(gameTimer);
-            gameState.gamePhase = 'finished';
-            
-            console.log('Game ended with results:', results);
-            
-            // Find current player's result
-            var currentPlayerName = gameState.playerName || 'Player';
-            var playerResult = results.payoutResults.payouts.find(function(payout) {
-                return payout.playerName === currentPlayerName;
-            });
-            
-            // Calculate balance changes
-            var entryFee = gameState.currentEntryFee || 0;
-            var winnings = playerResult ? playerResult.amount : 0;
-            var netChange = winnings - entryFee;
-            
-            // Update balance
-            gameState.balance += netChange;
-            document.getElementById('balance').textContent = gameState.balance.toFixed(2);
-            
-            // Display results
-            var winnerName = results.winner;
-            var winnerAmount = results.payoutResults.payouts[0]?.amount || 0;
-            
-            var resultMessage = 'Game finished!\n';
-            resultMessage += 'Winner: ' + winnerName + ' - $' + winnerAmount.toFixed(2) + '\n';
-            resultMessage += 'Your result: ' + (playerResult ? '$' + playerResult.amount.toFixed(2) + ' (Position #' + playerResult.position + ')' : 'No payout') + '\n';
-            resultMessage += 'Net change: ' + (netChange >= 0 ? '+' : '') + '$' + netChange.toFixed(2) + '\n';
-            resultMessage += 'New balance: $' + gameState.balance.toFixed(2);
-            
-            showMessage(resultMessage, netChange >= 0 ? 'success' : 'error');
-            
-            // Show detailed payout breakdown
-            setTimeout(function() {
-                showPayoutBreakdown(results);
-            }, 3000);
-            
-            // Hide puzzle area
-            document.getElementById('puzzle-area').classList.add('hidden');
-        }
-        
-        function showPayoutBreakdown(results) {
-            var breakdown = '🏆 TOURNAMENT RESULTS 🏆\n\n';
-            breakdown += 'Total Pot: $' + results.totalPot.toFixed(2) + '\n';
-            breakdown += 'House Take (6%): $' + results.houseTake.toFixed(2) + '\n';
-            breakdown += 'Player Pot (94%): $' + results.playerPot.toFixed(2) + '\n\n';
-            
-            breakdown += 'PAYOUTS:\n';
-            results.payoutResults.payouts.forEach(function(payout) {
-                breakdown += '#' + payout.position + ' ' + payout.playerName + ': $' + payout.amount.toFixed(2) + '\n';
-            });
-            
-            alert(breakdown);
-        }
-        
-        function submitAnswer() {
-            var answer = document.getElementById('answerInput').value.trim().toLowerCase();
-            
-            if (!answer) {
-                showMessage('Please enter an answer', 'error');
-                return;
-            }
-            
-            if (!isConnected || !socket) {
-                showMessage('Not connected to server. Please refresh the page.', 'error');
-                return;
-            }
-            
-            console.log('Submitting answer from tab:', TAB_ID, 'Answer:', answer, 'for room:', gameState.currentRoom);
-            
-            // Get submit button and input elements
-            var submitBtn = document.querySelector('button[onclick="submitAnswer()"]');
-            var answerInput = document.getElementById('answerInput');
-            
-            // Disable input and button immediately to prevent double submission
-            answerInput.disabled = true;
-            submitBtn.disabled = true;
-            
-            // Enhanced visual feedback - change button appearance
-            submitBtn.innerHTML = '⏳ Checking...';
-            submitBtn.style.backgroundColor = '#f59e0b';
-            submitBtn.style.cursor = 'not-allowed';
-            
-            // Show immediate feedback with better styling
-            showEnhancedMessage('🎯 Answer submitted! Checking...', 'info');
-            
-            // Add visual pulse effect to the puzzle area
-            var puzzleArea = document.getElementById('puzzle-area');
-            puzzleArea.style.animation = 'pulse 0.5s ease-in-out';
-            
-            socket.emit('submit_answer', {
-                roomId: gameState.currentRoom,
-                answer: answer
-            });
-        }
-        
-        function startGameTimer() {
-            // Clear any existing timer first
-            if (gameTimer) {
-                clearInterval(gameTimer);
-                gameTimer = null;
-            }
-            
-            // Timer will be set by displayQuestion function
-            gameTimer = setInterval(function() {
-                gameState.timeLeft--;
-                document.getElementById('timer').textContent = gameState.timeLeft;
-                if (gameState.timeLeft <= 0) {
-                    clearInterval(gameTimer);
-                    showMessage('Time\'s up!', 'error');
-                    
-                    // Disable input when time runs out
-                    document.getElementById('answerInput').disabled = true;
-                    document.querySelector('button[onclick="submitAnswer()"]').disabled = true;
-                    
-                    // Notify server that time is up
-                    if (socket && gameState.currentRoom) {
-                        socket.emit('time_up', {
-                            roomId: gameState.currentRoom
-                        });
+                        throw error;
                     }
                 }
-            }, 1000);
-        }
-        
-        function leaveRoom() {
-            if (gameTimer) {
-                clearInterval(gameTimer);
-                gameTimer = null;
+                
+                const user = {
+                    uid: userCredential.user.uid,
+                    email: userCredential.user.email,
+                    balance: 100 // Starting balance
+                };
+                
+                gameState.setUser(user);
+                gameState.connectSocket();
+                
+                showScreen('gameDashboard');
+                gameState.showToast('Welcome to Symbol Duel!', 'success');
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                gameState.showToast('Login failed: ' + error.message, 'error');
             }
-            
-            gameState.currentRoom = null;
-            gameState.gamePhase = 'menu';
-            showGameMenu();
         }
-        
-        function loadAvailableRooms() {
-            if (!isConnected || !socket) {
-                showMessage('Not connected to server. Please refresh the page.', 'error');
-                return;
-            }
-            
-            socket.emit('get_rooms');
-        }
-        
-        function displayRoomsList(rooms) {
-            var roomList = document.getElementById('roomList');
-            roomList.innerHTML = '';
-            
-            if (rooms.length === 0) {
-                roomList.innerHTML = '<div style="text-align: center; padding: 20px; color: #ccc;">No rooms available. Create one!</div>';
-                return;
-            }
-            
-            rooms.forEach(function(room) {
-                var roomItem = document.createElement('div');
-                roomItem.className = 'room-item';
-                roomItem.innerHTML = '<strong>' + room.name + '</strong> - $' + room.entryFee + ' entry - ' + room.playerCount + '/' + room.maxPlayers + ' players';
-                roomItem.onclick = function() { joinRoom(room.id); };
-                roomList.appendChild(roomItem);
+
+        // Screen management
+        function showScreen(screenId) {
+            const screens = ['loginScreen', 'gameDashboard', 'gameRoom'];
+            screens.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
             });
+            document.getElementById(screenId).classList.remove('hidden');
         }
-        
-        function processPayment() {
-            var amount = parseInt(document.getElementById('amount').value);
-            
-            if (!amount || amount < 10) {
-                showMessage('Please enter a valid amount (minimum $10)', 'error');
-                return;
-            }
-            
-            // Simulate payment
-            gameState.balance += amount;
-            document.getElementById('balance').textContent = gameState.balance;
-            showMessage('Payment successful! Balance updated.', 'success');
-            showGameMenu();
-        }
-        
-        // Allow Enter key to login
-        document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                if (document.getElementById('loginForm').classList.contains('hidden')) {
-                    // In game, check if answer input is focused
-                    if (document.getElementById('answerInput') && document.activeElement === document.getElementById('answerInput')) {
-                        submitAnswer();
-                    }
-                } else {
-                    // On login screen
-                    handleAuth();
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+            }, 2000);
+
+            // Login form
+            document.getElementById('loginForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                handleLogin(email, password);
+            });
+
+            // Create room form
+            document.getElementById('createRoomForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const roomName = document.getElementById('roomName').value;
+                const entryFee = parseInt(document.getElementById('entryFee').value);
+                
+                if (gameState.socket) {
+                    gameState.socket.emit('create_room', { roomName, entryFee });
                 }
-            }
-        });
-        
-        // Add click event listener as backup for submit button
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Firebase
-            initializeFirebase();
-            
-            // Initialize Stripe
-            initializeStripe();
-            
-            var submitBtn = document.querySelector('button[onclick="submitAnswer()"]');
-            if (submitBtn) {
-                submitBtn.addEventListener('click', function(e) {
-                    // If button is disabled, try to re-enable it
-                    if (this.disabled) {
-                        console.log('Submit button was disabled, attempting to re-enable');
-                        this.disabled = false;
-                        this.innerHTML = 'Submit Answer';
-                        this.style.backgroundColor = '';
-                        this.style.cursor = '';
-                        document.getElementById('answerInput').disabled = false;
-                    }
-                });
-            }
+            });
+
+            // Game controls
+            document.getElementById('startGame').addEventListener('click', () => {
+                if (gameState.socket && gameState.currentRoom) {
+                    gameState.socket.emit('start_game', { roomId: gameState.currentRoom });
+                }
+            });
+
+            document.getElementById('submitAnswer').addEventListener('click', () => {
+                const answer = document.getElementById('answerInput').value.trim();
+                if (answer && gameState.socket && gameState.currentRoom) {
+                    gameState.socket.emit('submit_answer', { 
+                        roomId: gameState.currentRoom, 
+                        answer: answer 
+                    });
+                }
+            });
+
+            document.getElementById('leaveRoom').addEventListener('click', () => {
+                showScreen('gameDashboard');
+                if (gameState.socket && gameState.currentRoom) {
+                    gameState.socket.emit('leave_room', { roomId: gameState.currentRoom });
+                }
+            });
+
+            document.getElementById('refreshRooms').addEventListener('click', () => {
+                if (gameState.socket) {
+                    gameState.socket.emit('get_rooms');
+                }
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                if (window.firebase.auth) {
+                    window.firebase.signOut(window.firebase.auth);
+                }
+                gameState.user = null;
+                showScreen('loginScreen');
+            });
+
+            // Enter key for answer input
+            document.getElementById('answerInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('submitAnswer').click();
+                }
+            });
+
+            // Auto-refresh rooms every 10 seconds
+            setInterval(() => {
+                if (gameState.socket && document.getElementById('gameDashboard').classList.contains('hidden') === false) {
+                    gameState.socket.emit('get_rooms');
+                }
+            }, 10000);
         });
     </script>
 </body>
