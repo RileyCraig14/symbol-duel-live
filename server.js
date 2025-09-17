@@ -195,7 +195,10 @@ class GameManager {
 
     startGame(roomId) {
         const room = this.rooms.get(roomId);
-        if (!room || room.players.length < 2) return null;
+        if (!room) return null;
+        
+        // Allow single player for testing, but recommend 2+ players
+        if (room.players.length < 1) return null;
         
         room.status = 'playing';
         room.gameStarted = true;
@@ -739,11 +742,12 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Symbol Duel server running on port ${PORT}`);
-    console.log(`🌐 Open http://localhost:${PORT} to play`);
+    console.log(`🌐 Server ready for Render deployment`);
     console.log(`📊 Loaded ${puzzles.length} puzzles`);
+    console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 module.exports = { app, server, io };

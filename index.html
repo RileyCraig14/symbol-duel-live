@@ -381,7 +381,9 @@
             updateUserInfo() {
                 if (this.user) {
                     document.getElementById('userInfo').classList.remove('hidden');
-                    document.getElementById('userBalance').textContent = `$${(this.user.balance || 0).toFixed(2)}`;
+                    // Convert cents to dollars for display
+                    const balanceInDollars = (this.user.balance || 0) / 100;
+                    document.getElementById('userBalance').textContent = `$${balanceInDollars.toFixed(2)}`;
                 }
             }
 
@@ -390,10 +392,12 @@
                     this.socket.disconnect();
                 }
                 
-                this.socket = io(window.location.origin, {
-                    transports: ['websocket'],
-                    timeout: 20000
-                });
+        this.socket = io(window.location.origin, {
+            transports: ['websocket', 'polling'],
+            timeout: 60000,
+            pingTimeout: 60000,
+            pingInterval: 25000
+        });
 
                 this.setupSocketListeners();
             }
@@ -757,7 +761,7 @@
                 const user = {
                     uid: userCredential.user.uid,
                     email: userCredential.user.email,
-                    balance: 100 // Starting balance
+                    balance: 10000 // Starting balance in cents ($100.00)
                 };
                 
                 gameState.setUser(user);

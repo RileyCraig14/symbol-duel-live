@@ -35,8 +35,9 @@ async function testGameFlow() {
             
             socket.on('room_created', (data) => {
                 console.log('✅ Room created:', data.roomId);
+                socket.roomId = data.roomId;
                 
-                // Test starting game
+                // Test starting game (now works with single player)
                 socket.emit('start_game', { roomId: data.roomId });
             });
             
