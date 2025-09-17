@@ -6,7 +6,7 @@ const io = require('socket.io-client');
 console.log('🧪 Testing Symbol Duel Game Flow...\n');
 
 // Test configuration
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
+const SERVER_URL = process.env.SERVER_URL || 'https://symbol-duel-live.onrender.com';
 const TEST_USERS = [
     { email: 'test1@example.com', password: 'password123' },
     { email: 'test2@example.com', password: 'password123' }
