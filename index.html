@@ -861,7 +861,7 @@
                 const user = {
                     uid: userCredential.user.uid,
                     email: userCredential.user.email,
-                    balance: 10000 // Starting balance in cents ($100.00)
+                    balance: 0 // Real money only - users must deposit
                 };
                 
                 gameState.setUser(user);

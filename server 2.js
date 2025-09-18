@@ -1,5 +1,5 @@
-// Symbol Duel - Production Ready Server with Stripe Integration
-// Complete gaming platform with real money transactions
+// Modern Symbol Duel Server - Production Ready
+// Clean, maintainable, and scalable implementation
 
 const express = require('express');
 const http = require('http');
@@ -9,54 +9,19 @@ const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const cors = require('cors');
-// Initialize Stripe - REQUIRED FOR REAL MONEY
-if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'sk_test_your_stripe_secret_key_here') {
-    console.error('❌ Stripe not configured');
-    console.error('❌ REAL MONEY REQUIRES STRIPE - Please add STRIPE_SECRET_KEY to .env');
-    process.exit(1);
-}
-
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const admin = require('firebase-admin');
 require('dotenv').config();
-
-// Initialize Firebase Admin - REQUIRED FOR REAL MONEY
-let firebaseInitialized = false;
-if (!admin.apps.length) {
-    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY ? 
-        JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY) : null;
-    
-    if (serviceAccount && serviceAccount.private_key !== 'your_private_key') {
-        try {
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount),
-                databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`
-            });
-            firebaseInitialized = true;
-            console.log('🔥 Firebase Admin initialized successfully');
-        } catch (error) {
-            console.error('❌ Firebase Admin initialization failed:', error.message);
-            console.error('❌ REAL MONEY REQUIRES FIREBASE - Please configure Firebase service account');
-            process.exit(1);
-        }
-    } else {
-        console.error('❌ Firebase Admin not configured');
-        console.error('❌ REAL MONEY REQUIRES FIREBASE - Please add FIREBASE_SERVICE_ACCOUNT_KEY to .env');
-        process.exit(1);
-    }
-}
 
 const app = express();
 const server = http.createServer(app);
 
-// Socket.IO with production configuration
+// Socket.IO with modern configuration
 const io = socketIo(server, {
     cors: {
-        origin: process.env.CORS_ORIGIN || "*",
+        origin: "*", // Allow all origins for Render deployment
         methods: ["GET", "POST"],
         credentials: true
     },
-    transports: ['websocket', 'polling'],
+    transports: ['websocket', 'polling'], // Add polling as fallback
     pingTimeout: 60000,
     pingInterval: 25000
 });
@@ -66,21 +31,21 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://cdn.socket.io", "https://www.gstatic.com", "https://apis.google.com", "https://js.stripe.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://cdn.socket.io", "https://www.gstatic.com", "https://apis.google.com"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "wss:", "ws:", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://identitytoolkit.googleapis.com", "https://securetoken.googleapis.com", "https://api.stripe.com"],
+            connectSrc: ["'self'", "wss:", "ws:", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://identitytoolkit.googleapis.com", "https://securetoken.googleapis.com"],
             fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
             objectSrc: ["'none'"],
             mediaSrc: ["'self'"],
-            frameSrc: ["'self'", "https://*.firebaseapp.com", "https://js.stripe.com", "https://hooks.stripe.com"]
+            frameSrc: ["'self'", "https://*.firebaseapp.com"]
         }
     }
 }));
 
 // CORS configuration
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || "*",
+    origin: "*", // Allow all origins for Render deployment
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -89,7 +54,7 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100,
+    max: 100, // limit each IP to 100 requests per windowMs
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
@@ -116,15 +81,14 @@ app.use(validateInput);
 // Static files
 app.use(express.static(path.join(__dirname)));
 
-// Health check endpoint
+// Health check endpoint for Render
 app.get('/health', (req, res) => {
     res.status(200).json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
         puzzles: puzzles.length,
         rooms: gameManager.rooms.size,
-        players: gameManager.players.size,
-        environment: process.env.NODE_ENV || 'development'
+        players: gameManager.players.size
     });
 });
 
@@ -159,69 +123,18 @@ try {
     ];
 }
 
-// Production Game Manager with Firebase integration
-class ProductionGameManager {
+// Game state management
+class GameManager {
     constructor() {
         this.rooms = new Map();
         this.players = new Map();
         this.leaderboard = new Map();
         this.gameHistory = [];
         this.userBalances = new Map();
-        this.db = firebaseInitialized ? admin.firestore() : null;
     }
 
-    // Firebase user balance management - REAL MONEY ONLY
-    async getUserBalance(userId) {
-        try {
-            if (!this.db) {
-                throw new Error('Firebase not configured - real money requires Firebase');
-            }
-            
-            const userDoc = await this.db.collection('users').doc(userId).get();
-            if (userDoc.exists) {
-                return userDoc.data().balance || 0;
-            }
-            
-            // New users start with $0 - they must deposit real money
-            await this.db.collection('users').doc(userId).set({
-                balance: 0,
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                totalDeposited: 0,
-                totalWon: 0,
-                gamesPlayed: 0
-            });
-            
-            return 0;
-        } catch (error) {
-            console.error('Error getting user balance:', error);
-            throw new Error('Cannot access user balance - Firebase required for real money');
-        }
-    }
-
-    async updateUserBalance(userId, newBalance) {
-        try {
-            if (!this.db) {
-                throw new Error('Firebase not configured - real money requires Firebase');
-            }
-            
-            await this.db.collection('users').doc(userId).update({
-                balance: newBalance,
-                lastUpdated: admin.firestore.FieldValue.serverTimestamp()
-            });
-            return true;
-        } catch (error) {
-            console.error('Error updating user balance:', error);
-            throw new Error('Cannot update user balance - Firebase required for real money');
-        }
-    }
-
-    // Room management with $200 limit
+    // Room management
     createRoom(roomId, roomData) {
-        // Validate entry fee limit
-        if (roomData.entryFee > 200) {
-            throw new Error('Entry fee cannot exceed $200');
-        }
-
         const room = {
             id: roomId,
             name: roomData.roomName,
@@ -239,15 +152,14 @@ class ProductionGameManager {
             answers: {},
             gameStarted: false,
             currentPuzzle: null,
-            createdAt: new Date(),
-            stripePaymentIntent: null // For Stripe integration
+            createdAt: new Date()
         };
         
         this.rooms.set(roomId, room);
         return room;
     }
 
-    async joinRoom(roomId, playerId, playerName, userId) {
+    joinRoom(roomId, playerId, playerName) {
         const room = this.rooms.get(roomId);
         if (!room) return null;
 
@@ -255,20 +167,23 @@ class ProductionGameManager {
             return null;
         }
 
-        // Check user balance
-        const currentBalance = await this.getUserBalance(userId);
-        const entryFeeCents = room.entryFee * 100;
-        
-        if (currentBalance < entryFeeCents) {
-            console.log(`❌ Insufficient balance: ${playerName} has $${(currentBalance/100).toFixed(2)}, needs $${room.entryFee}`);
-            return null;
+        // DEDUCT ENTRY FEE FROM PLAYER BALANCE
+        const player = this.players.get(playerId);
+        if (player && player.userId) {
+            const currentBalance = this.userBalances.get(player.userId) || 0;
+            const entryFeeCents = room.entryFee * 100;
+            
+            if (currentBalance < entryFeeCents) {
+                console.log(`❌ Insufficient balance: ${playerName} has $${(currentBalance/100).toFixed(2)}, needs $${room.entryFee}`);
+                return null; // Insufficient funds
+            }
+            
+            // Deduct entry fee
+            const newBalance = currentBalance - entryFeeCents;
+            this.userBalances.set(player.userId, newBalance);
+            
+            console.log(`💰 Entry fee deducted: ${playerName} paid $${room.entryFee}, new balance: $${(newBalance/100).toFixed(2)}`);
         }
-        
-        // Deduct entry fee
-        const newBalance = currentBalance - entryFeeCents;
-        await this.updateUserBalance(userId, newBalance);
-        
-        console.log(`💰 Entry fee deducted: ${playerName} paid $${room.entryFee}, new balance: $${(newBalance/100).toFixed(2)}`);
 
         room.players.push(playerId);
         room.playerNames.push(playerName);
@@ -292,7 +207,7 @@ class ProductionGameManager {
         room.questionStartTime = Date.now();
         room.timeLimit = 30000; // 30 seconds in milliseconds
         
-        // Start first question immediately
+        // START FIRST QUESTION IMMEDIATELY
         const difficultyPuzzles = this.getPuzzleByDifficulty(room.currentRound);
         const puzzle = difficultyPuzzles[Math.floor(Math.random() * difficultyPuzzles.length)];
         room.currentPuzzle = puzzle;
@@ -398,7 +313,7 @@ class ProductionGameManager {
         return room;
     }
 
-    async endGame(roomId) {
+    endGame(roomId) {
         const room = this.rooms.get(roomId);
         if (!room) return null;
 
@@ -414,9 +329,9 @@ class ProductionGameManager {
         // Calculate payouts
         const payoutStructure = this.calculatePayouts(room.prizePool, room.players.length);
         
-        // Distribute payouts to user balances
+        // DISTRIBUTE PAYOUTS TO USER BALANCES
         const payoutResults = [];
-        for (const [index, player] of rankings.entries()) {
+        rankings.forEach((player, index) => {
             const position = index + 1;
             const payoutAmount = payoutStructure.payouts[position] || 0;
             
@@ -424,13 +339,13 @@ class ProductionGameManager {
                 // Get player's Firebase userId
                 const playerObj = this.players.get(player.playerId);
                 if (playerObj && playerObj.userId) {
-                    const currentBalance = await this.getUserBalance(playerObj.userId);
+                    const currentBalance = this.userBalances.get(playerObj.userId) || 0;
                     const newBalance = currentBalance + (payoutAmount * 100); // Convert dollars to cents
-                    await this.updateUserBalance(playerObj.userId, newBalance);
+                    this.userBalances.set(playerObj.userId, newBalance);
                     
                     console.log(`💰 Payout distributed: ${player.playerName} (${playerObj.userId}) -> $${payoutAmount} (Position: ${position})`);
                     
-                    // Store payout for frontend
+                    // Store payout for Firebase update
                     payoutResults.push({
                         playerId: player.playerId,
                         playerName: player.playerName,
@@ -450,19 +365,19 @@ class ProductionGameManager {
                     score: player.score,
                     payout: 0,
                     userId: this.players.get(player.playerId)?.userId,
-                    newBalance: await this.getUserBalance(this.players.get(player.playerId)?.userId) || 0,
+                    newBalance: this.userBalances.get(this.players.get(player.playerId)?.userId) || 0,
                     balanceChange: 0
                 });
             }
-        }
+        });
         
         const results = {
             winner: rankings[0].playerName,
             finalScores: room.scores,
             rankings: rankings,
             payoutStructure: payoutStructure,
-            payoutResults: payoutResults,
-            payouts: payoutStructure.payouts,
+            payoutResults: payoutResults, // Add this for frontend
+            payouts: payoutStructure.payouts, // Add this for frontend compatibility
             totalPot: payoutStructure.totalPot,
             houseTake: payoutStructure.houseTake,
             playerPot: payoutStructure.playerPot
@@ -471,20 +386,22 @@ class ProductionGameManager {
         // Update leaderboard
         this.updateLeaderboard(rankings, room.entryFee);
         
-        // Send balance updates to all players
+        // SEND BALANCE UPDATES TO ALL PLAYERS
         payoutResults.forEach(payout => {
             if (payout.userId) {
                 const playerSocket = Array.from(io.sockets.sockets.values())
                     .find(s => s.playerId === payout.playerId);
                 if (playerSocket) {
+                    const newBalance = this.userBalances.get(payout.userId) || 0;
                     playerSocket.emit('balance_updated', { 
-                        balance: payout.newBalance,
+                        balance: newBalance,
                         change: payout.balanceChange,
                         payout: payout.payout,
                         position: payout.position
                     });
                     
-                    console.log(`💰 Balance update sent to ${payout.playerName}: $${(payout.newBalance/100).toFixed(2)} (${payout.payout > 0 ? '+' : ''}$${payout.payout.toFixed(2)})`);
+                    // Store balance for Firebase sync (would be implemented with Firebase Admin SDK)
+                    console.log(`💰 Balance update sent to ${payout.playerName}: $${(newBalance/100).toFixed(2)} (${payout.payout > 0 ? '+' : ''}$${payout.payout.toFixed(2)})`);
                 }
             }
         });
@@ -594,21 +511,21 @@ class ProductionGameManager {
         if (!player || !player.roomId) return;
 
         const room = this.rooms.get(player.roomId);
-        if (room) {
+            if (room) {
             const playerIndex = room.players.indexOf(playerId);
-            if (playerIndex > -1) {
-                room.players.splice(playerIndex, 1);
-                room.playerNames.splice(playerIndex, 1);
+                if (playerIndex > -1) {
+                    room.players.splice(playerIndex, 1);
+                    room.playerNames.splice(playerIndex, 1);
                 delete room.scores[playerId];
                 delete room.answers[playerId];
                 room.prizePool -= (room.entryFee * 100);
-            }
+                }
                 
             if (room.hostId === playerId) {
-                if (room.players.length > 0) {
-                    room.hostId = room.players[0];
-                    room.hostName = room.playerNames[0];
-                } else {
+                    if (room.players.length > 0) {
+                        room.hostId = room.players[0];
+                        room.hostName = room.playerNames[0];
+                    } else {
                     this.rooms.delete(player.roomId);
                 }
             }
@@ -618,64 +535,8 @@ class ProductionGameManager {
     }
 }
 
-// Initialize production game manager
-const gameManager = new ProductionGameManager();
-
-// Stripe API Routes - REAL MONEY ONLY
-app.post('/api/create-payment-intent', async (req, res) => {
-    try {
-        const { amount, userId } = req.body;
-        
-        // Validate amount (minimum $5, maximum $500)
-        if (amount < 5 || amount > 500) {
-            return res.status(400).json({ error: 'Amount must be between $5 and $500' });
-        }
-
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount * 100, // Convert to cents
-            currency: 'usd',
-            metadata: {
-                userId: userId,
-                type: 'deposit'
-            }
-        });
-
-        res.json({
-            clientSecret: paymentIntent.client_secret
-        });
-    } catch (error) {
-        console.error('Error creating payment intent:', error);
-        res.status(500).json({ error: 'Failed to create payment intent' });
-    }
-});
-
-app.post('/api/confirm-payment', async (req, res) => {
-    try {
-        const { paymentIntentId, userId } = req.body;
-        
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-        
-        if (paymentIntent.status === 'succeeded') {
-            const amount = paymentIntent.amount; // Already in cents
-            
-            // Update user balance in Firebase
-            const currentBalance = await gameManager.getUserBalance(userId);
-            const newBalance = currentBalance + amount;
-            await gameManager.updateUserBalance(userId, newBalance);
-            
-            res.json({
-                success: true,
-                amount: amount,
-                newBalance: newBalance
-            });
-        } else {
-            res.status(400).json({ error: 'Payment not completed' });
-        }
-    } catch (error) {
-        console.error('Error confirming payment:', error);
-        res.status(500).json({ error: 'Failed to confirm payment' });
-    }
-});
+// Initialize game manager
+const gameManager = new GameManager();
 
 // API Routes
 app.get('/api/leaderboard', (req, res) => {
@@ -714,57 +575,43 @@ io.on('connection', (socket) => {
         console.log(`👤 Player authenticated: ${playerName} (${data.userId})`);
     });
 
-    // Create room with $200 limit
-    socket.on('create_room', async (data) => {
-        try {
-            const player = gameManager.players.get(socket.id);
-            if (!player) return;
+    // Create room
+    socket.on('create_room', (data) => {
+        const player = gameManager.players.get(socket.id);
+        if (!player) return;
 
-            // Validate entry fee
-            if (data.entryFee > 200) {
-                socket.emit('error', { message: 'Entry fee cannot exceed $200' });
-                return;
-            }
+        const roomId = `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const room = gameManager.createRoom(roomId, {
+            roomName: data.roomName,
+            entryFee: data.entryFee,
+            hostId: socket.id,
+            hostName: player.name
+        });
 
-            const roomId = `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            const room = gameManager.createRoom(roomId, {
-                roomName: data.roomName,
-                entryFee: data.entryFee,
-                hostId: socket.id,
-                hostName: player.name
-            });
+        socket.join(roomId);
+        player.roomId = roomId;
 
-            socket.join(roomId);
-            player.roomId = roomId;
-
-            socket.emit('room_created', { roomId, room });
-            console.log(`🏠 Room created: ${roomId} by ${player.name} with $${data.entryFee} entry fee`);
-        } catch (error) {
-            socket.emit('error', { message: error.message });
-        }
+        socket.emit('room_created', { roomId, room });
+        console.log(`🏠 Room created: ${roomId} by ${player.name}`);
     });
 
     // Join room
-    socket.on('join_room', async (data) => {
-        try {
-            const player = gameManager.players.get(socket.id);
-            if (!player) return;
+    socket.on('join_room', (data) => {
+        const player = gameManager.players.get(socket.id);
+        if (!player) return;
 
-            const room = await gameManager.joinRoom(data.roomId, socket.id, player.name, player.userId);
-            if (!room) {
-                socket.emit('error', { message: 'Cannot join room - insufficient funds or room full' });
-                return;
-            }
-
-            socket.join(data.roomId);
-            player.roomId = data.roomId;
-
-            io.to(data.roomId).emit('room_updated', room);
-            socket.emit('room_joined', { roomId: data.roomId, room });
-            console.log(`🚪 Player joined room: ${player.name} -> ${data.roomId}`);
-        } catch (error) {
-            socket.emit('error', { message: error.message });
+        const room = gameManager.joinRoom(data.roomId, socket.id, player.name);
+        if (!room) {
+            socket.emit('error', { message: 'Cannot join room' });
+            return;
         }
+
+        socket.join(data.roomId);
+        player.roomId = data.roomId;
+
+        io.to(data.roomId).emit('room_updated', room);
+        socket.emit('room_joined', { roomId: data.roomId, room });
+        console.log(`🚪 Player joined room: ${player.name} -> ${data.roomId}`);
     });
 
     // Start game
@@ -777,7 +624,7 @@ io.on('connection', (socket) => {
 
         io.to(data.roomId).emit('game_started', room);
         
-        // Immediately send first question with server timer
+        // IMMEDIATELY SEND FIRST QUESTION WITH SERVER TIMER
         io.to(data.roomId).emit('question_updated', {
             ...room.currentPuzzle,
             round: room.currentRound,
@@ -792,15 +639,14 @@ io.on('connection', (socket) => {
                 const nextRoom = gameManager.endRound(data.roomId);
                 if (nextRoom) {
                     if (nextRoom.currentRound > nextRoom.totalRounds) {
-                        gameManager.endGame(data.roomId).then(results => {
-                            io.to(data.roomId).emit('game_ended', results);
-                            
-                            // Clean up room after 10 seconds
-                            setTimeout(() => {
-                                gameManager.removeFinishedRoom(data.roomId);
-                                io.emit('rooms_list', gameManager.getAvailableRooms());
-                            }, 10000);
-                        });
+                        const results = gameManager.endGame(data.roomId);
+                        io.to(data.roomId).emit('game_ended', results);
+                        
+                        // CLEAN UP ROOM AFTER 10 SECONDS
+                        setTimeout(() => {
+                            gameManager.removeFinishedRoom(data.roomId);
+                            io.emit('rooms_list', gameManager.getAvailableRooms());
+                        }, 10000);
                     } else {
                         // Send next question
                         io.to(data.roomId).emit('question_updated', {
@@ -814,14 +660,13 @@ io.on('connection', (socket) => {
                         setTimeout(() => {
                             const finalRoom = gameManager.endRound(data.roomId);
                             if (finalRoom && finalRoom.currentRound > finalRoom.totalRounds) {
-                                gameManager.endGame(data.roomId).then(results => {
-                                    io.to(data.roomId).emit('game_ended', results);
-                                    
-                                    setTimeout(() => {
-                                        gameManager.removeFinishedRoom(data.roomId);
-                                        io.emit('rooms_list', gameManager.getAvailableRooms());
-                                    }, 10000);
-                                });
+                                const results = gameManager.endGame(data.roomId);
+                                io.to(data.roomId).emit('game_ended', results);
+                                
+                                setTimeout(() => {
+                                    gameManager.removeFinishedRoom(data.roomId);
+                                    io.emit('rooms_list', gameManager.getAvailableRooms());
+                                }, 10000);
                             }
                         }, 30000); // 30 seconds for each question
                     }
@@ -848,6 +693,12 @@ io.on('connection', (socket) => {
         });
 
         console.log(`📝 Answer submitted: ${socket.id} -> ${data.answer} (${result.correct ? 'correct' : 'incorrect'})`);
+    });
+
+    // Time up (now handled by server-side timers)
+    socket.on('time_up', (data) => {
+        console.log(`⏰ Client reported time up for room ${data.roomId} - server timer will handle this`);
+        // Server-side timers now handle this automatically
     });
 
     // Get rooms
@@ -893,15 +744,10 @@ process.on('unhandledRejection', (reason, promise) => {
 // Start server
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Symbol Duel REAL MONEY Server running on port ${PORT}`);
-    console.log(`🌐 Server ready for production deployment`);
+    console.log(`🚀 Symbol Duel server running on port ${PORT}`);
+    console.log(`🌐 Server ready for Render deployment`);
     console.log(`📊 Loaded ${puzzles.length} puzzles`);
     console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`💳 Stripe integration: ENABLED`);
-    console.log(`🔥 Firebase Admin: ENABLED`);
-    console.log(`💰 Entry fee limit: $5 - $200`);
-    console.log(`💵 REAL MONEY ONLY - No virtual balances`);
-    console.log(`🎯 Production ready for real users!`);
 });
 
 module.exports = { app, server, io };
