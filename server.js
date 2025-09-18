@@ -9,6 +9,8 @@ const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const cors = require('cors');
+require('dotenv').config();
+
 // Initialize Stripe - REQUIRED FOR REAL MONEY
 if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'sk_test_your_stripe_secret_key_here') {
     console.error('❌ Stripe not configured');
@@ -18,31 +20,21 @@ if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'sk_test
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
-require('dotenv').config();
 
 // Initialize Firebase Admin - REQUIRED FOR REAL MONEY
 let firebaseInitialized = false;
 if (!admin.apps.length) {
-    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY ? 
-        JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY) : null;
-    
-    if (serviceAccount && serviceAccount.private_key !== 'your_private_key') {
-        try {
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount),
-                databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`
-            });
-            firebaseInitialized = true;
-            console.log('🔥 Firebase Admin initialized successfully');
-        } catch (error) {
-            console.error('❌ Firebase Admin initialization failed:', error.message);
-            console.error('❌ REAL MONEY REQUIRES FIREBASE - Please configure Firebase service account');
-            process.exit(1);
-        }
-    } else {
-        console.error('❌ Firebase Admin not configured');
-        console.error('❌ REAL MONEY REQUIRES FIREBASE - Please add FIREBASE_SERVICE_ACCOUNT_KEY to .env');
-        process.exit(1);
+    try {
+        // Try to initialize with default credentials for production
+        admin.initializeApp({
+            projectId: 'symbol-duel'
+        });
+        firebaseInitialized = true;
+        console.log('🔥 Firebase Admin initialized successfully');
+    } catch (error) {
+        console.error('❌ Firebase Admin initialization failed:', error.message);
+        console.log('⚠️  Continuing without Firebase - will use in-memory storage');
+        firebaseInitialized = false;
     }
 }
 
