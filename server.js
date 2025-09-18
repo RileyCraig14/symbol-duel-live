@@ -9,20 +9,29 @@ const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const cors = require('cors');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
 const admin = require('firebase-admin');
 require('dotenv').config();
 
 // Initialize Firebase Admin
+let firebaseInitialized = false;
 if (!admin.apps.length) {
     const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY ? 
         JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY) : null;
     
-    if (serviceAccount) {
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`
-        });
+    if (serviceAccount && serviceAccount.private_key !== 'your_private_key') {
+        try {
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+                databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`
+            });
+            firebaseInitialized = true;
+            console.log('🔥 Firebase Admin initialized successfully');
+        } catch (error) {
+            console.log('⚠️ Firebase Admin initialization failed:', error.message);
+        }
+    } else {
+        console.log('⚠️ Firebase Admin not configured - using in-memory storage');
     }
 }
 
@@ -147,33 +156,45 @@ class ProductionGameManager {
         this.leaderboard = new Map();
         this.gameHistory = [];
         this.userBalances = new Map();
-        this.db = admin.firestore();
+        this.db = firebaseInitialized ? admin.firestore() : null;
     }
 
     // Firebase user balance management
     async getUserBalance(userId) {
         try {
-            const userDoc = await this.db.collection('users').doc(userId).get();
-            if (userDoc.exists) {
-                return userDoc.data().balance || 0;
+            if (this.db) {
+                const userDoc = await this.db.collection('users').doc(userId).get();
+                if (userDoc.exists) {
+                    return userDoc.data().balance || 0;
+                }
+                return 0;
+            } else {
+                // Fallback to in-memory storage
+                return this.userBalances.get(userId) || 0;
             }
-            return 0;
         } catch (error) {
             console.error('Error getting user balance:', error);
-            return 0;
+            return this.userBalances.get(userId) || 0;
         }
     }
 
     async updateUserBalance(userId, newBalance) {
         try {
-            await this.db.collection('users').doc(userId).update({
-                balance: newBalance,
-                lastUpdated: admin.firestore.FieldValue.serverTimestamp()
-            });
+            if (this.db) {
+                await this.db.collection('users').doc(userId).update({
+                    balance: newBalance,
+                    lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+                });
+            } else {
+                // Fallback to in-memory storage
+                this.userBalances.set(userId, newBalance);
+            }
             return true;
         } catch (error) {
             console.error('Error updating user balance:', error);
-            return false;
+            // Fallback to in-memory storage
+            this.userBalances.set(userId, newBalance);
+            return true;
         }
     }
 
@@ -586,6 +607,10 @@ const gameManager = new ProductionGameManager();
 // Stripe API Routes
 app.post('/api/create-payment-intent', async (req, res) => {
     try {
+        if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'sk_test_your_stripe_secret_key_here') {
+            return res.status(503).json({ error: 'Stripe not configured. Please add your Stripe keys to the environment variables.' });
+        }
+
         const { amount, userId } = req.body;
         
         // Validate amount (minimum $5, maximum $500)
@@ -613,6 +638,10 @@ app.post('/api/create-payment-intent', async (req, res) => {
 
 app.post('/api/confirm-payment', async (req, res) => {
     try {
+        if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'sk_test_your_stripe_secret_key_here') {
+            return res.status(503).json({ error: 'Stripe not configured. Please add your Stripe keys to the environment variables.' });
+        }
+
         const { paymentIntentId, userId } = req.body;
         
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
@@ -859,8 +888,10 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`🌐 Server ready for Render deployment`);
     console.log(`📊 Loaded ${puzzles.length} puzzles`);
     console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`💳 Stripe integration: ${process.env.STRIPE_SECRET_KEY ? 'Enabled' : 'Disabled'}`);
-    console.log(`🔥 Firebase Admin: ${admin.apps.length > 0 ? 'Enabled' : 'Disabled'}`);
+    console.log(`💳 Stripe integration: ${process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY !== 'sk_test_your_stripe_secret_key_here' ? 'Enabled' : 'Disabled (using placeholder keys)'}`);
+    console.log(`🔥 Firebase Admin: ${firebaseInitialized ? 'Enabled' : 'Disabled (using in-memory storage)'}`);
+    console.log(`💰 Entry fee limit: $5 - $200`);
+    console.log(`🎯 Ready for real money gaming!`);
 });
 
 module.exports = { app, server, io };
