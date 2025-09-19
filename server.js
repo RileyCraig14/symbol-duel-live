@@ -20,6 +20,7 @@ if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'sk_test
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
+const LegalCompliance = require('./legal-compliance');
 
 // Initialize Firebase Admin - REQUIRED FOR REAL MONEY
 let firebaseInitialized = false;
@@ -41,6 +42,9 @@ if (!admin.apps.length) {
 const app = express();
 const server = http.createServer(app);
 
+// Initialize Legal Compliance
+const legalCompliance = new LegalCompliance();
+
 // Socket.IO with production configuration
 const io = socketIo(server, {
     cors: {
@@ -52,6 +56,9 @@ const io = socketIo(server, {
     pingTimeout: 60000,
     pingInterval: 25000
 });
+
+// Legal compliance middleware
+app.use(legalCompliance.createComplianceMiddleware());
 
 // Security middleware
 app.use(helmet({
