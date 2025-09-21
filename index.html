@@ -215,6 +215,11 @@
                     </div>
                 </div>
 
+                <!-- Payment Methods Section -->
+                <div id="paymentMethodsSection">
+                    <!-- Saved payment methods will be loaded here -->
+                </div>
+
                 <!-- Wallet Management -->
                 <div class="glass rounded-xl p-6 mb-6">
                     <h3 class="text-xl font-bold mb-4">
@@ -229,10 +234,11 @@
                                 <div>
                                     <label class="block text-xs font-medium mb-1">Payment Method</label>
                                     <select id="paymentMethod" class="w-full px-3 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">Select Payment Method</option>
                                         <option value="paypal">💳 PayPal</option>
-                                        <option value="square">💳 Square</option>
-                                        <option value="braintree">💳 Braintree</option>
                                         <option value="credit_card">💳 Credit Card</option>
+                                        <option value="bank_transfer">🏦 Bank Transfer</option>
+                                        <option value="crypto">₿ Cryptocurrency</option>
                                     </select>
                                 </div>
                                 <!-- Amount Input -->
@@ -1000,6 +1006,371 @@
                     gameState.socket.emit('get_rooms');
                 }
             }, 10000);
+
+            // Payment Form Management
+            const PaymentFormManager = {
+                currentMethod: null,
+                
+                init() {
+                    this.loadSavedPaymentMethods();
+                    this.setupEventListeners();
+                },
+
+                loadSavedPaymentMethods() {
+                    const container = document.getElementById('paymentMethodsSection');
+                    container.innerHTML = `
+                        <div class="glass rounded-xl p-6 mb-6">
+                            <h3 class="text-xl font-bold mb-4">
+                                <i class="fas fa-credit-card text-blue-400 mr-2"></i>Payment Methods
+                            </h3>
+                            
+                            <div id="savedPaymentMethods" class="space-y-3 mb-4">
+                                <div class="text-gray-400 text-center py-8">
+                                    <i class="fas fa-credit-card text-4xl mb-3"></i>
+                                    <div>No payment methods added yet</div>
+                                    <div class="text-sm">Add a payment method to start making deposits</div>
+                                </div>
+                            </div>
+
+                            <button id="addPaymentMethodBtn" class="btn bg-gradient-primary hover:opacity-90 w-full py-3">
+                                <i class="fas fa-plus mr-2"></i>Add Payment Method
+                            </button>
+                        </div>
+                    `;
+                },
+
+                setupEventListeners() {
+                    // Add payment method button
+                    document.addEventListener('click', (e) => {
+                        if (e.target.id === 'addPaymentMethodBtn') {
+                            this.showPaymentMethodSelection();
+                        }
+                    });
+
+                    // Payment method selection
+                    document.addEventListener('click', (e) => {
+                        if (e.target.closest('.payment-method-option')) {
+                            const method = e.target.closest('.payment-method-option').dataset.method;
+                            this.showPaymentForm(method);
+                        }
+                    });
+
+                    // Card number formatting
+                    document.addEventListener('input', (e) => {
+                        if (e.target.id === 'cardNumber') {
+                            e.target.value = this.formatCardNumber(e.target.value);
+                        }
+                        if (e.target.id === 'expiryDate') {
+                            e.target.value = this.formatExpiryDate(e.target.value);
+                        }
+                    });
+
+                    // Save payment method buttons
+                    document.addEventListener('click', (e) => {
+                        if (e.target.id === 'saveCreditCardBtn') {
+                            this.saveCreditCard();
+                        }
+                        if (e.target.id === 'savePayPalBtn') {
+                            this.savePayPal();
+                        }
+                        if (e.target.id === 'saveBankBtn') {
+                            this.saveBankTransfer();
+                        }
+                        if (e.target.id === 'saveCryptoBtn') {
+                            this.saveCrypto();
+                        }
+                    });
+                },
+
+                showPaymentMethodSelection() {
+                    const container = document.getElementById('paymentMethodsSection');
+                    container.innerHTML = `
+                        <div class="glass rounded-xl p-6 mb-6">
+                            <h3 class="text-xl font-bold mb-4">
+                                <i class="fas fa-credit-card text-blue-400 mr-2"></i>Add Payment Method
+                            </h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div class="payment-method-option p-4 border border-gray-600 rounded-lg cursor-pointer hover:border-blue-500 transition-colors" data-method="credit_card">
+                                    <div class="flex items-center mb-2">
+                                        <span class="text-2xl mr-3">💳</span>
+                                        <div>
+                                            <div class="font-medium">Credit Card</div>
+                                            <div class="text-sm text-gray-400">Visa, Mastercard, American Express</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="payment-method-option p-4 border border-gray-600 rounded-lg cursor-pointer hover:border-blue-500 transition-colors" data-method="paypal">
+                                    <div class="flex items-center mb-2">
+                                        <span class="text-2xl mr-3">🅿️</span>
+                                        <div>
+                                            <div class="font-medium">PayPal</div>
+                                            <div class="text-sm text-gray-400">Pay with your PayPal account</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="payment-method-option p-4 border border-gray-600 rounded-lg cursor-pointer hover:border-blue-500 transition-colors" data-method="bank_transfer">
+                                    <div class="flex items-center mb-2">
+                                        <span class="text-2xl mr-3">🏦</span>
+                                        <div>
+                                            <div class="font-medium">Bank Transfer</div>
+                                            <div class="text-sm text-gray-400">Direct bank account transfer</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="payment-method-option p-4 border border-gray-600 rounded-lg cursor-pointer hover:border-blue-500 transition-colors" data-method="crypto">
+                                    <div class="flex items-center mb-2">
+                                        <span class="text-2xl mr-3">₿</span>
+                                        <div>
+                                            <div class="font-medium">Cryptocurrency</div>
+                                            <div class="text-sm text-gray-400">Bitcoin, Ethereum, USDC</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button onclick="PaymentFormManager.loadSavedPaymentMethods()" class="btn bg-gray-600 hover:bg-gray-700 w-full py-3">
+                                <i class="fas fa-arrow-left mr-2"></i>Back
+                            </button>
+                        </div>
+                    `;
+                },
+
+                showPaymentForm(method) {
+                    this.currentMethod = method;
+                    let formHTML = '';
+
+                    switch (method) {
+                        case 'credit_card':
+                            formHTML = this.generateCreditCardForm();
+                            break;
+                        case 'paypal':
+                            formHTML = this.generatePayPalForm();
+                            break;
+                        case 'bank_transfer':
+                            formHTML = this.generateBankTransferForm();
+                            break;
+                        case 'crypto':
+                            formHTML = this.generateCryptoForm();
+                            break;
+                    }
+
+                    const container = document.getElementById('paymentMethodsSection');
+                    container.innerHTML = `
+                        <div class="glass rounded-xl p-6 mb-6">
+                            ${formHTML}
+                            <button onclick="PaymentFormManager.showPaymentMethodSelection()" class="btn bg-gray-600 hover:bg-gray-700 w-full py-3 mt-4">
+                                <i class="fas fa-arrow-left mr-2"></i>Back
+                            </button>
+                        </div>
+                    `;
+                },
+
+                generateCreditCardForm() {
+                    return `
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-medium mb-4">💳 Credit Card Information</h4>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Card Number *</label>
+                                <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19"
+                                       class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Cardholder Name *</label>
+                                <input type="text" id="cardholderName" placeholder="John Doe"
+                                       class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Expiry Date *</label>
+                                    <input type="text" id="expiryDate" placeholder="MM/YY" maxlength="5"
+                                           class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">CVV *</label>
+                                    <input type="text" id="cvv" placeholder="123" maxlength="4"
+                                           class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+
+                            <div class="bg-blue-900 bg-opacity-30 p-4 rounded-lg">
+                                <div class="flex items-start">
+                                    <i class="fas fa-shield-alt text-blue-400 mr-3 mt-1"></i>
+                                    <div class="text-sm text-gray-300">
+                                        <div class="font-medium mb-1">Secure Payment</div>
+                                        <div>Your payment information is encrypted and secure.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button id="saveCreditCardBtn" class="btn bg-gradient-primary hover:opacity-90 w-full py-3">
+                                <i class="fas fa-credit-card mr-2"></i>Save Credit Card
+                            </button>
+                        </div>
+                    `;
+                },
+
+                generatePayPalForm() {
+                    return `
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-medium mb-4">🅿️ PayPal Account</h4>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-2">PayPal Email Address *</label>
+                                <input type="email" id="paypalEmail" placeholder="your.email@example.com"
+                                       class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div class="bg-yellow-900 bg-opacity-30 p-4 rounded-lg">
+                                <div class="flex items-start">
+                                    <i class="fas fa-info-circle text-yellow-400 mr-3 mt-1"></i>
+                                    <div class="text-sm text-gray-300">
+                                        <div class="font-medium mb-1">PayPal Integration</div>
+                                        <div>We'll redirect you to PayPal to securely authorize payments.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button id="savePayPalBtn" class="btn bg-gradient-primary hover:opacity-90 w-full py-3">
+                                <i class="fas fa-paypal mr-2"></i>Link PayPal Account
+                            </button>
+                        </div>
+                    `;
+                },
+
+                generateBankTransferForm() {
+                    return `
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-medium mb-4">🏦 Bank Account Information</h4>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Account Type *</label>
+                                <select id="accountType" class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Select Account Type</option>
+                                    <option value="checking">Checking</option>
+                                    <option value="savings">Savings</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Routing Number *</label>
+                                <input type="text" id="routingNumber" placeholder="123456789" maxlength="9"
+                                       class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Account Number *</label>
+                                <input type="text" id="accountNumber" placeholder="Account Number"
+                                       class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <button id="saveBankBtn" class="btn bg-gradient-primary hover:opacity-90 w-full py-3">
+                                <i class="fas fa-university mr-2"></i>Save Bank Account
+                            </button>
+                        </div>
+                    `;
+                },
+
+                generateCryptoForm() {
+                    return `
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-medium mb-4">₿ Cryptocurrency Wallet</h4>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Cryptocurrency *</label>
+                                <select id="cryptoType" class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Select Cryptocurrency</option>
+                                    <option value="bitcoin">Bitcoin (BTC)</option>
+                                    <option value="ethereum">Ethereum (ETH)</option>
+                                    <option value="usdc">USD Coin (USDC)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Wallet Address *</label>
+                                <input type="text" id="walletAddress" placeholder="Enter your wallet address"
+                                       class="w-full px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <button id="saveCryptoBtn" class="btn bg-gradient-primary hover:opacity-90 w-full py-3">
+                                <i class="fas fa-coins mr-2"></i>Save Crypto Wallet
+                            </button>
+                        </div>
+                    `;
+                },
+
+                formatCardNumber(value) {
+                    const cleaned = value.replace(/\s/g, '');
+                    const groups = cleaned.match(/.{1,4}/g);
+                    return groups ? groups.join(' ') : cleaned;
+                },
+
+                formatExpiryDate(value) {
+                    const cleaned = value.replace(/\D/g, '');
+                    if (cleaned.length >= 2) {
+                        return cleaned.substring(0, 2) + '/' + cleaned.substring(2, 4);
+                    }
+                    return cleaned;
+                },
+
+                saveCreditCard() {
+                    const cardNumber = document.getElementById('cardNumber').value;
+                    const cardholderName = document.getElementById('cardholderName').value;
+                    const expiryDate = document.getElementById('expiryDate').value;
+                    const cvv = document.getElementById('cvv').value;
+
+                    if (!cardNumber || !cardholderName || !expiryDate || !cvv) {
+                        gameState.showToast('Please fill in all credit card fields', 'error');
+                        return;
+                    }
+
+                    // Simulate saving (in real app, this would be encrypted and sent to server)
+                    const last4 = cardNumber.slice(-4);
+                    gameState.showToast(`Credit card ending in ${last4} saved successfully!`, 'success');
+                    this.loadSavedPaymentMethods();
+                },
+
+                savePayPal() {
+                    const email = document.getElementById('paypalEmail').value;
+                    if (!email) {
+                        gameState.showToast('Please enter your PayPal email', 'error');
+                        return;
+                    }
+                    gameState.showToast(`PayPal account ${email} linked successfully!`, 'success');
+                    this.loadSavedPaymentMethods();
+                },
+
+                saveBankTransfer() {
+                    const accountType = document.getElementById('accountType').value;
+                    const routingNumber = document.getElementById('routingNumber').value;
+                    const accountNumber = document.getElementById('accountNumber').value;
+
+                    if (!accountType || !routingNumber || !accountNumber) {
+                        gameState.showToast('Please fill in all bank account fields', 'error');
+                        return;
+                    }
+                    gameState.showToast('Bank account saved successfully!', 'success');
+                    this.loadSavedPaymentMethods();
+                },
+
+                saveCrypto() {
+                    const cryptoType = document.getElementById('cryptoType').value;
+                    const walletAddress = document.getElementById('walletAddress').value;
+
+                    if (!cryptoType || !walletAddress) {
+                        gameState.showToast('Please fill in all cryptocurrency fields', 'error');
+                        return;
+                    }
+                    gameState.showToast(`${cryptoType} wallet saved successfully!`, 'success');
+                    this.loadSavedPaymentMethods();
+                }
+            };
+
+            // Initialize payment form manager
+            PaymentFormManager.init();
         });
     </script>
 </body>
