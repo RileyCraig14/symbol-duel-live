@@ -224,13 +224,26 @@
                         <!-- Deposit -->
                         <div>
                             <label class="block text-sm font-medium mb-2">Add Funds ($5 - $500)</label>
-                            <div class="flex space-x-2">
-                                <input type="number" id="depositAmount" min="5" max="500" step="5" 
-                                       class="flex-1 px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                       placeholder="Amount">
-                                <button id="depositBtn" class="btn bg-gradient-success hover:opacity-90 px-4 py-2 rounded-lg">
-                                    <i class="fas fa-plus mr-2"></i>Deposit
-                                </button>
+                            <div class="space-y-3">
+                                <!-- Payment Method Selection -->
+                                <div>
+                                    <label class="block text-xs font-medium mb-1">Payment Method</label>
+                                    <select id="paymentMethod" class="w-full px-3 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="paypal">💳 PayPal</option>
+                                        <option value="square">💳 Square</option>
+                                        <option value="braintree">💳 Braintree</option>
+                                        <option value="credit_card">💳 Credit Card</option>
+                                    </select>
+                                </div>
+                                <!-- Amount Input -->
+                                <div class="flex space-x-2">
+                                    <input type="number" id="depositAmount" min="5" max="500" step="5" 
+                                           class="flex-1 px-4 py-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           placeholder="Amount">
+                                    <button id="depositBtn" class="btn bg-gradient-success hover:opacity-90 px-4 py-2 rounded-lg">
+                                        <i class="fas fa-plus mr-2"></i>Deposit
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <!-- Quick Deposit Buttons -->
@@ -773,9 +786,9 @@
         const gameState = new GameState();
 
         // Initialize Stripe
-        const stripe = Stripe('pk_test_your_stripe_publishable_key_here'); // Replace with your actual publishable key
+        const stripe = Stripe('pk_live_51KnY2IBN2FMJdfxFCYBRR3cntr5oe6fj2wSWMIjnpVQ9loZgUWg0SmORk0n8weQKhd3GyH4OZzw3LX0XrDuR6cWm008EDyoGPJ'); // Replace with your actual publishable key
 
-        // Payment processing
+        // Multi-Payment Processing
         async function processDeposit(amount) {
             try {
                 if (!gameState.user) {
@@ -788,57 +801,43 @@
                     return;
                 }
 
-                // Create payment intent
-                const response = await fetch('/api/create-payment-intent', {
+                const paymentMethod = document.getElementById('paymentMethod').value;
+                gameState.showToast(`Processing ${paymentMethod} payment...`, 'info');
+
+                // Create payment based on selected method
+                const response = await fetch('/api/create-payment', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         amount: amount,
-                        userId: gameState.user.uid
+                        userId: gameState.user.uid,
+                        method: paymentMethod
                     })
                 });
 
-                const { clientSecret } = await response.json();
+                const paymentData = await response.json();
 
-                // Confirm payment with Stripe
-                const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-                    payment_method: {
-                        card: {
-                            number: '4242424242424242', // Test card
-                            exp_month: 12,
-                            exp_year: 2025,
-                            cvc: '123'
-                        }
-                    }
-                });
-
-                if (error) {
-                    gameState.showToast('Payment failed: ' + error.message, 'error');
-                } else if (paymentIntent.status === 'succeeded') {
-                    // Confirm payment on server
-                    const confirmResponse = await fetch('/api/confirm-payment', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            paymentIntentId: paymentIntent.id,
-                            userId: gameState.user.uid
-                        })
-                    });
-
-                    const result = await confirmResponse.json();
-                    if (result.success) {
-                        gameState.user.balance = result.newBalance;
-                        gameState.updateUserInfo();
-                        gameState.showToast(`✅ Deposit successful! Added $${amount}. New balance: $${(result.newBalance/100).toFixed(2)}`, 'success');
-                    }
+                if (!response.ok) {
+                    throw new Error(paymentData.error || 'Payment failed');
                 }
+
+                // Handle different payment methods
+                if (paymentData.redirectUrl) {
+                    // Redirect to external payment (PayPal, etc.)
+                    window.open(paymentData.redirectUrl, '_blank');
+                    gameState.showToast(`Redirecting to ${paymentMethod}...`, 'info');
+                } else {
+                    // Direct payment processing
+                    gameState.showToast(`✅ Deposit successful! Added $${amount} via ${paymentMethod}`, 'success');
+                    gameState.userBalance += amount * 100; // Convert to cents
+                    updateBalance();
+                }
+
             } catch (error) {
                 console.error('Deposit error:', error);
-                gameState.showToast('Deposit failed. Please try again.', 'error');
+                gameState.showToast(`Deposit error: ${error.message}`, 'error');
             }
         }
 

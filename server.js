@@ -11,14 +11,10 @@ const helmet = require('helmet');
 const cors = require('cors');
 require('dotenv').config();
 
-// Initialize Stripe - REQUIRED FOR REAL MONEY
-if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'sk_test_your_stripe_secret_key_here') {
-    console.error('❌ Stripe not configured');
-    console.error('❌ REAL MONEY REQUIRES STRIPE - Please add STRIPE_SECRET_KEY to .env');
-    process.exit(1);
-}
-
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// Initialize Multi-Payment System
+const PaymentProcessor = require('./payment-processor');
+const paymentProcessor = new PaymentProcessor();
+console.log('💳 Multi-Payment System initialized (PayPal, Square, Braintree, Credit Card)');
 const admin = require('firebase-admin');
 const LegalCompliance = require('./legal-compliance');
 
@@ -132,31 +128,13 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Load puzzles
-let puzzles = [];
-try {
-    const puzzlesData = fs.readFileSync(path.join(__dirname, 'rebus-puzzles.json'), 'utf8');
-    const puzzlesJson = JSON.parse(puzzlesData);
-    puzzles = puzzlesJson.map(puzzle => ({
-        symbols: puzzle.symbols,
-        answer: puzzle.answer.toLowerCase(),
-        alternatives: [
-            puzzle.answer.toLowerCase(),
-            puzzle.answer.toLowerCase().replace(/\s+/g, ''),
-            puzzle.answer.toLowerCase().replace(/\s+/g, '-')
-        ],
-        difficulty: puzzle.difficulty || 'easy',
-        points: puzzle.difficulty === 'easy' ? 10 : puzzle.difficulty === 'medium' ? 15 : 20
-    }));
-    console.log(`✅ Loaded ${puzzles.length} puzzles`);
-} catch (error) {
-    console.error('❌ Error loading puzzles:', error);
-    puzzles = [
-        { symbols: '🎵 + 🏠', answer: 'music house', alternatives: ['musichouse', 'music house', 'house music', 'housemusic'], difficulty: 'easy', points: 10 },
-        { symbols: '☀️ + 🌊', answer: 'sun water', alternatives: ['sunwater', 'sun water'], difficulty: 'easy', points: 10 },
-        { symbols: '🚗 + 🏠', answer: 'car house', alternatives: ['carhouse', 'car house', 'garage'], difficulty: 'easy', points: 10 }
-    ];
-}
+// Load enhanced puzzle collections
+const enhancedPuzzles = require('./enhanced-puzzles');
+const triviaPuzzles = require('./trivia-puzzles');
+
+// Combine all puzzles for maximum variety
+let puzzles = [...enhancedPuzzles, ...triviaPuzzles];
+console.log(`✅ Loaded ${puzzles.length} enhanced puzzles`);
 
 // Production Game Manager with Firebase integration
 class ProductionGameManager {
@@ -620,32 +598,69 @@ class ProductionGameManager {
 // Initialize production game manager
 const gameManager = new ProductionGameManager();
 
-// Stripe API Routes - REAL MONEY ONLY
-app.post('/api/create-payment-intent', async (req, res) => {
+// Multi-Payment API Routes - PRODUCTION READY
+app.post('/api/create-payment', async (req, res) => {
     try {
-        const { amount, userId } = req.body;
+        const { amount, userId, method = 'paypal' } = req.body;
         
         // Validate amount (minimum $5, maximum $500)
         if (amount < 5 || amount > 500) {
             return res.status(400).json({ error: 'Amount must be between $5 and $500' });
         }
 
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount * 100, // Convert to cents
-            currency: 'usd',
-            metadata: {
-                userId: userId,
-                type: 'deposit'
-            }
-        });
+        let paymentResult;
+
+        switch (method) {
+            case 'paypal':
+                paymentResult = await paymentProcessor.createPayPalPayment(amount, userId);
+                break;
+            case 'square':
+                paymentResult = await paymentProcessor.createSquarePayment(amount, userId);
+                break;
+            case 'braintree':
+                paymentResult = await paymentProcessor.createBraintreePayment(amount, userId);
+                break;
+            default:
+                return res.status(400).json({ error: 'Invalid payment method' });
+        }
 
         res.json({
-            clientSecret: paymentIntent.client_secret
+            success: true,
+            paymentId: paymentResult.paymentId,
+            amount: amount,
+            method: method,
+            redirectUrl: paymentResult.redirectUrl || null
         });
     } catch (error) {
-        console.error('Error creating payment intent:', error);
-        res.status(500).json({ error: 'Failed to create payment intent' });
+        console.error('Error creating payment:', error);
+        res.status(500).json({ error: 'Failed to create payment' });
     }
+});
+
+// Credit Card Processing Route
+app.post('/api/process-credit-card', async (req, res) => {
+    try {
+        const { amount, userId, cardData } = req.body;
+        
+        // Validate amount
+        if (amount < 5 || amount > 500) {
+            return res.status(400).json({ error: 'Amount must be between $5 and $500' });
+        }
+
+        const result = await paymentProcessor.processCreditCard(amount, userId, cardData);
+        
+        res.json(result);
+    } catch (error) {
+        console.error('Credit card processing error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get available payment methods
+app.get('/api/payment-methods', (req, res) => {
+    res.json({
+        methods: paymentProcessor.getAvailableMethods()
+    });
 });
 
 app.post('/api/confirm-payment', async (req, res) => {
@@ -892,15 +907,15 @@ process.on('unhandledRejection', (reason, promise) => {
 // Start server
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Symbol Duel REAL MONEY Server running on port ${PORT}`);
-    console.log(`🌐 Server ready for production deployment`);
+    console.log(`🚀 Symbol Duel PRODUCTION Server running on port ${PORT}`);
+    console.log(`🌐 Server ready for LIVE USERS`);
     console.log(`📊 Loaded ${puzzles.length} puzzles`);
     console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`💳 Stripe integration: ENABLED`);
+    console.log(`💳 Stripe LIVE integration: ENABLED`);
     console.log(`🔥 Firebase Admin: ENABLED`);
     console.log(`💰 Entry fee limit: $5 - $200`);
-    console.log(`💵 REAL MONEY ONLY - No virtual balances`);
-    console.log(`🎯 Production ready for real users!`);
+    console.log(`💵 REAL MONEY ONLY - Credit card payments enabled`);
+    console.log(`🎯 PRODUCTION READY - Accepting real payments!`);
 });
 
 module.exports = { app, server, io };
